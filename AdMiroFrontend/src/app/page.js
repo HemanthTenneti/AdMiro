@@ -370,7 +370,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-[#e5e5e5] bg-[#f5f0e8]">
         <div className="max-w-7xl mx-auto px-8 py-16">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-12 mb-12">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-12 mb-12">
             <div className="md:col-span-1">
               <h3 className="font-bold text-black mb-4 flex items-center gap-2">
                 <div className="w-5 h-5 bg-[#8b6f47] rounded flex items-center justify-center text-white text-xs font-bold">
@@ -394,11 +394,6 @@ export default function Home() {
                 </li>
                 <li>
                   <Link href="#" className="hover:text-black transition">
-                    Pricing
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-black transition">
                     Security
                   </Link>
                 </li>
@@ -415,16 +410,6 @@ export default function Home() {
                 <li>
                   <Link href="#" className="hover:text-black transition">
                     About
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-black transition">
-                    Blog
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-black transition">
-                    Careers
                   </Link>
                 </li>
                 <li>
