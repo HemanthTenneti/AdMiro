@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+:root {
+  --background: #faf9f7;
+  --foreground: #000000;
+  --accent: #8b6f47;
+  --border: #e5e5e5;
+  --text-secondary: #626262;
+  --bg-secondary: #f0ede6;
+}
+
+* {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue",
+    sans-serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* Ensure white text is not overridden */
+.text-white {
+  color: white !important;
+}
+
+/* Smooth transitions */
+html {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+a {
+  color: var(--accent);
+}
