@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import Link from "next/link";
+import gsap from "gsap";
 import {
   Monitor,
   ChartBar,
@@ -12,8 +14,131 @@ import {
 } from "phosphor-react";
 
 export default function Home() {
+  const mainRef = useRef(null);
+  const heroTitleRef = useRef(null);
+  const heroDescRef = useRef(null);
+  const heroCTARef = useRef(null);
+
+  useEffect(() => {
+    // Enable smooth scrolling
+    document.documentElement.style.scrollBehavior = "smooth";
+
+    // Hero section animations
+    gsap.fromTo(
+      heroTitleRef.current,
+      { opacity: 0, y: 30 },
+      { opacity: 1, y: 0, duration: 0.8, ease: "power2.out", delay: 0.2 }
+    );
+
+    gsap.fromTo(
+      heroDescRef.current,
+      { opacity: 0, y: 20 },
+      { opacity: 1, y: 0, duration: 0.8, ease: "power2.out", delay: 0.4 }
+    );
+
+    gsap.fromTo(
+      heroCTARef.current,
+      { opacity: 0, y: 20 },
+      { opacity: 1, y: 0, duration: 0.8, ease: "power2.out", delay: 0.6 }
+    );
+
+    // Animate feature cards on scroll
+    const featureCards = document.querySelectorAll("[data-animate-card]");
+    featureCards.forEach((card, index) => {
+      const observer = new IntersectionObserver(
+        entries => {
+          entries.forEach(entry => {
+            if (
+              entry.isIntersecting &&
+              !entry.target.classList.contains("animated")
+            ) {
+              entry.target.classList.add("animated");
+              gsap.fromTo(
+                entry.target,
+                { opacity: 0, y: 40 },
+                {
+                  opacity: 1,
+                  y: 0,
+                  duration: 0.6,
+                  ease: "power2.out",
+                  delay: index * 0.1,
+                }
+              );
+            }
+          });
+        },
+        { threshold: 0.1 }
+      );
+      observer.observe(card);
+    });
+
+    // Animate how it works steps on scroll
+    const steps = document.querySelectorAll("[data-animate-step]");
+    steps.forEach((step, index) => {
+      const observer = new IntersectionObserver(
+        entries => {
+          entries.forEach(entry => {
+            if (
+              entry.isIntersecting &&
+              !entry.target.classList.contains("animated")
+            ) {
+              entry.target.classList.add("animated");
+              gsap.fromTo(
+                entry.target,
+                { opacity: 0, y: 30 },
+                {
+                  opacity: 1,
+                  y: 0,
+                  duration: 0.6,
+                  ease: "power2.out",
+                  delay: index * 0.15,
+                }
+              );
+            }
+          });
+        },
+        { threshold: 0.1 }
+      );
+      observer.observe(step);
+    });
+
+    // Animate trust section logos on scroll
+    const logos = document.querySelectorAll("[data-animate-logo]");
+    logos.forEach((logo, index) => {
+      const observer = new IntersectionObserver(
+        entries => {
+          entries.forEach(entry => {
+            if (
+              entry.isIntersecting &&
+              !entry.target.classList.contains("animated")
+            ) {
+              entry.target.classList.add("animated");
+              gsap.fromTo(
+                entry.target,
+                { opacity: 0, scale: 0.8 },
+                {
+                  opacity: 1,
+                  scale: 1,
+                  duration: 0.5,
+                  ease: "back.out",
+                  delay: index * 0.08,
+                }
+              );
+            }
+          });
+        },
+        { threshold: 0.1 }
+      );
+      observer.observe(logo);
+    });
+
+    return () => {
+      document.documentElement.style.scrollBehavior = "auto";
+    };
+  }, []);
+
   return (
-    <main className="min-h-screen bg-[#faf9f7]">
+    <main className="min-h-screen bg-[#faf9f7]" ref={mainRef}>
       {/* Navigation */}
       <nav className="border-b border-[#e5e5e5] sticky top-0 z-50 bg-[#faf9f7]/95 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-8 py-4 flex justify-between items-center">
@@ -41,14 +166,9 @@ export default function Home() {
 
           <div className="flex items-center gap-3">
             <Link
-              href="/auth/login"
-              className="px-4 py-2 text-sm font-bold text-black border border-[#8b6f47] rounded-lg hover:bg-[#8b6f47] hover:text-white transition">
-              Log in
-            </Link>
-            <Link
-              href="/auth/register"
+              href="/login"
               className="px-4 py-2 text-sm font-bold bg-[#8b6f47] text-white rounded-lg hover:bg-[#6b5535] transition">
-              Get started
+              Login
             </Link>
           </div>
         </div>
@@ -57,26 +177,25 @@ export default function Home() {
       {/* Hero Section */}
       <section className="max-w-7xl mx-auto px-8 py-32">
         <div className="max-w-3xl">
-          <h1 className="text-7xl md:text-8xl font-bold leading-tight text-black mb-8">
+          <h1
+            className="text-7xl md:text-8xl font-bold leading-tight text-black mb-8"
+            ref={heroTitleRef}>
             One platform. Zero complexity.
           </h1>
-          <p className="text-xl text-gray-700 mb-12 leading-relaxed max-w-2xl">
+          <p
+            className="text-xl text-gray-700 mb-12 leading-relaxed max-w-2xl"
+            ref={heroDescRef}>
             Manage digital displays and advertisements at scale. Push content in
             real-time, track performance, and grow your business—all from one
             intelligent dashboard.
           </p>
 
-          <div className="flex gap-4 flex-wrap">
+          <div className="flex gap-4 flex-wrap" ref={heroCTARef}>
             <Link
-              href="/auth/register"
-              className="px-8 py-4 bg-[#8b6f47] text-white font-bold rounded-lg hover:bg-[#6b5535] transition inline-flex items-center gap-2 text-lg">
+              href="/login"
+              className="px-8 py-4 border-2 border-[#8b6f47] text-black font-bold rounded-lg hover:bg-[#f5f0e8] transition inline-flex items-center gap-2 text-lg">
               Get started free
               <ArrowRight size={20} weight="bold" />
-            </Link>
-            <Link
-              href="#"
-              className="px-8 py-4 border-2 border-[#8b6f47] text-black rounded-lg font-bold hover:bg-[#f5f0e8] transition text-lg">
-              Request a demo
             </Link>
           </div>
         </div>
@@ -92,6 +211,7 @@ export default function Home() {
             {["OpenAI", "Figma", "Stripe", "Vercel", "Notion"].map(company => (
               <div
                 key={company}
+                data-animate-logo
                 className="text-center text-gray-700 font-bold text-lg">
                 {company}
               </div>
@@ -155,6 +275,7 @@ export default function Home() {
             return (
               <div
                 key={i}
+                data-animate-card
                 className="p-8 border border-[#e5e5e5] rounded-xl hover:border-[#8b6f47] hover:shadow-lg transition">
                 <div className="w-12 h-12 bg-[#f5f0e8] rounded-lg flex items-center justify-center mb-4">
                   <Icon size={24} weight="bold" className="text-[#8b6f47]" />
@@ -208,7 +329,7 @@ export default function Home() {
                   "Track real-time analytics. See impressions, engagement metrics, and optimize based on performance data.",
               },
             ].map((item, i) => (
-              <div key={i} className="flex gap-8">
+              <div key={i} data-animate-step className="flex gap-8">
                 <div className="shrink-0">
                   <div className="flex items-center justify-center h-16 w-16 rounded-lg bg-[#8b6f47] text-white font-bold text-lg">
                     {item.step}
@@ -239,7 +360,7 @@ export default function Home() {
             upgrade when you need more.
           </p>
           <Link
-            href="/auth/register"
+            href="/login"
             className="inline-block px-10 py-4 bg-white text-[#8b6f47] rounded-lg font-semibold hover:bg-amber-50 transition">
             Get started free
           </Link>
