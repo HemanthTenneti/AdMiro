@@ -61,6 +61,7 @@ const register = async (req, res) => {
       )
     );
   } catch (error) {
+    console.error("❌ Registration error:", error.message);
     return res.status(400).json(formatErrorResponse(error.message));
   }
 };
@@ -100,6 +101,7 @@ const login = async (req, res) => {
       )
     );
   } catch (error) {
+    console.error("❌ Login error:", error.message);
     return res.status(401).json(formatErrorResponse(error.message));
   }
 };

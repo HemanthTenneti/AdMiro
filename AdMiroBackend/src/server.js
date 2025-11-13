@@ -2,6 +2,8 @@ require("dotenv").config();
 const express = require("express");
 const helmet = require("helmet");
 const morgan = require("morgan");
+const session = require("express-session");
+const passport = require("./config/passport");
 const connectDB = require("./config/database");
 const corsMiddleware = require("./middleware/cors");
 const { apiLimiter } = require("./middleware/rateLimiter");
@@ -22,6 +24,25 @@ app.use(morgan("dev"));
 
 // CORS
 app.use(corsMiddleware);
+
+// Session for Passport
+app.use(
+  session({
+    secret: process.env.JWT_SECRET || "your-secret-key",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      sameSite: "strict",
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    },
+  })
+);
+
+// Passport middleware
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Rate limiting
 app.use("/api/", apiLimiter);

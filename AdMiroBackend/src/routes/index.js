@@ -15,8 +15,9 @@ router.get("/health", (req, res) => {
   });
 });
 
-// Auth routes (will be added in Phase 2)
+// Auth routes (traditional + Google OAuth)
 router.use("/auth", require("./authRoutes"));
+router.use("/auth", require("./googleAuthRoutes"));
 
 // Displays routes (will be added in Phase 4)
 // router.use('/displays', require('./displays'));

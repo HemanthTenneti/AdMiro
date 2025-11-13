@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 const wipeDatabase = async () => {
   try {
     console.log("🔌 Connecting to MongoDB...");
-    
+
     const conn = await mongoose.connect(process.env.DATABASE_URL, {
       serverSelectionTimeoutMS: 30000,
       socketTimeoutMS: 60000,
@@ -17,10 +17,10 @@ const wipeDatabase = async () => {
 
     // Drop all collections
     console.log("\n🗑️  Wiping all collections...");
-    
+
     const collections = mongoose.connection.collections;
     let count = 0;
-    
+
     for (const key in collections) {
       const collection = collections[key];
       await collection.deleteMany({});
@@ -33,7 +33,7 @@ const wipeDatabase = async () => {
     }
 
     console.log(`\n🎉 Successfully wiped ${count} collections!`);
-    
+
     await mongoose.disconnect();
     process.exit(0);
   } catch (error) {

@@ -17,7 +17,7 @@ const formatErrorResponse = (message, error = null, details = null) => {
 /**
  * Format success response
  */
-const formatSuccessResponse = (message, data = null) => {
+const formatSuccessResponse = (data = null, message = "Success") => {
   return {
     success: true,
     message,
