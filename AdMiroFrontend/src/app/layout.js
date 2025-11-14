@@ -1,6 +1,7 @@
 import "./globals.css";
 import ThemeProvider from "@/components/ThemeProvider";
 import { PageTransition } from "@/components/PageTransition";
+import ScrollToTop from "@/components/ScrollToTop";
 
 export const metadata = {
   title: "AdMiro - Digital Advertisement Management",
@@ -14,6 +15,7 @@ export default function RootLayout({ children }) {
       <body className="antialiased">
         <ThemeProvider>
           <PageTransition>{children}</PageTransition>
+          <ScrollToTop />
         </ThemeProvider>
       </body>
     </html>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import gsap from "gsap";
 import {
@@ -11,6 +11,7 @@ import {
   Lock,
   Code,
   ArrowRight,
+  CaretUp,
 } from "phosphor-react";
 
 export default function Home() {
@@ -23,23 +24,23 @@ export default function Home() {
     // Enable smooth scrolling
     document.documentElement.style.scrollBehavior = "smooth";
 
-    // Hero section animations
+    // Hero section animations with smooth easing
     gsap.fromTo(
       heroTitleRef.current,
-      { opacity: 0, y: 30 },
-      { opacity: 1, y: 0, duration: 0.8, ease: "power2.out", delay: 0.2 }
+      { opacity: 0, y: 20 },
+      { opacity: 1, y: 0, duration: 0.8, ease: "sine.out", delay: 0.2 }
     );
 
     gsap.fromTo(
       heroDescRef.current,
-      { opacity: 0, y: 20 },
-      { opacity: 1, y: 0, duration: 0.8, ease: "power2.out", delay: 0.4 }
+      { opacity: 0, y: 15 },
+      { opacity: 1, y: 0, duration: 0.8, ease: "sine.out", delay: 0.35 }
     );
 
     gsap.fromTo(
       heroCTARef.current,
-      { opacity: 0, y: 20 },
-      { opacity: 1, y: 0, duration: 0.8, ease: "power2.out", delay: 0.6 }
+      { opacity: 0, y: 15 },
+      { opacity: 1, y: 0, duration: 0.8, ease: "sine.out", delay: 0.5 }
     );
 
     // Animate feature cards on scroll
@@ -55,13 +56,13 @@ export default function Home() {
               entry.target.classList.add("animated");
               gsap.fromTo(
                 entry.target,
-                { opacity: 0, y: 40 },
+                { opacity: 0, y: 25 },
                 {
                   opacity: 1,
                   y: 0,
-                  duration: 0.6,
-                  ease: "power2.out",
-                  delay: index * 0.1,
+                  duration: 0.7,
+                  ease: "sine.out",
+                  delay: index * 0.08,
                 }
               );
             }
@@ -85,13 +86,13 @@ export default function Home() {
               entry.target.classList.add("animated");
               gsap.fromTo(
                 entry.target,
-                { opacity: 0, y: 30 },
+                { opacity: 0, y: 20 },
                 {
                   opacity: 1,
                   y: 0,
-                  duration: 0.6,
-                  ease: "power2.out",
-                  delay: index * 0.15,
+                  duration: 0.7,
+                  ease: "sine.out",
+                  delay: index * 0.1,
                 }
               );
             }
@@ -115,13 +116,13 @@ export default function Home() {
               entry.target.classList.add("animated");
               gsap.fromTo(
                 entry.target,
-                { opacity: 0, scale: 0.8 },
+                { opacity: 0, scale: 0.9 },
                 {
                   opacity: 1,
                   scale: 1,
-                  duration: 0.5,
-                  ease: "back.out",
-                  delay: index * 0.08,
+                  duration: 0.6,
+                  ease: "sine.out",
+                  delay: index * 0.06,
                 }
               );
             }

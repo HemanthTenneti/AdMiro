@@ -9,18 +9,18 @@ export function usePageTransition() {
   useEffect(() => {
     if (!pageRef.current) return;
 
-    // Animate page in
+    // Animate page in with smooth easing
     gsap.fromTo(
       pageRef.current,
       {
         opacity: 0,
-        y: 20,
+        y: 15,
       },
       {
         opacity: 1,
         y: 0,
-        duration: 0.6,
-        ease: "power2.out",
+        duration: 0.7,
+        ease: "sine.out",
       }
     );
   }, [pathname]);
@@ -45,13 +45,13 @@ export function animateOnScroll(element, options = {}) {
   const defaultOptions = {
     fromVars: {
       opacity: 0,
-      y: 40,
+      y: 30,
     },
     toVars: {
       opacity: 1,
       y: 0,
-      duration: 0.8,
-      ease: "power2.out",
+      duration: 0.7,
+      ease: "sine.out",
     },
     scrollTrigger: true,
   };
@@ -80,4 +80,28 @@ export function animateOnScroll(element, options = {}) {
   } else {
     gsap.fromTo(element, config.fromVars, config.toVars);
   }
+}
+
+export function useScrollToTop() {
+  const [isVisible, setIsVisible] = require("react").useState(false);
+  const buttonRef = useRef(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsVisible(window.scrollY > 500);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    gsap.to(window, {
+      scrollTo: { y: 0 },
+      duration: 1,
+      ease: "sine.inOut",
+    });
+  };
+
+  return { isVisible, scrollToTop, buttonRef };
 }
