@@ -4,6 +4,7 @@ import {
   formatSuccessResponse,
   formatErrorResponse,
 } from "../utils/helpers.js";
+import * as loggingService from "../services/loggingService.js";
 
 /**
  * Create a new display
@@ -95,6 +96,24 @@ const createDisplay = async (req, res) => {
     // Create display in database
     const newDisplay = new Display(displayData);
     await newDisplay.save();
+
+    // Log the action
+    await loggingService.createLog({
+      action: "create",
+      entityType: "display",
+      entityId: newDisplay._id,
+      userId: req.user.userId,
+      details: {
+        description: `Display created: ${displayId}`,
+        metadata: {
+          displayId,
+          displayName,
+          location,
+        },
+      },
+      ipAddress: req.ip,
+      userAgent: req.get("user-agent"),
+    });
 
     console.log(`✅ Display created: ${displayId} by user ${req.user.userId}`);
 
@@ -300,6 +319,27 @@ const updateDisplay = async (req, res) => {
 
     await display.save();
 
+    // Log the action
+    await loggingService.createLog({
+      action: "update",
+      entityType: "display",
+      entityId: display._id,
+      userId: req.user.userId,
+      details: {
+        description: `Display updated: ${display.displayName}`,
+        changes: {
+          displayName: displayName ? displayName : undefined,
+          location: location ? location : undefined,
+          status: status ? status : undefined,
+        },
+        metadata: {
+          displayId: display.displayId,
+        },
+      },
+      ipAddress: req.ip,
+      userAgent: req.get("user-agent"),
+    });
+
     console.log(`✅ Display ${id} updated by user ${req.user.userId}`);
 
     return res
@@ -343,6 +383,23 @@ const deleteDisplay = async (req, res) => {
     }
 
     await Display.findByIdAndDelete(id);
+
+    // Log the action
+    await loggingService.createLog({
+      action: "delete",
+      entityType: "display",
+      entityId: display._id,
+      userId: req.user.userId,
+      details: {
+        description: `Display deleted: ${display.displayName}`,
+        metadata: {
+          displayId: display.displayId,
+          displayName: display.displayName,
+        },
+      },
+      ipAddress: req.ip,
+      userAgent: req.get("user-agent"),
+    });
 
     console.log(`✅ Display ${id} deleted by user ${req.user.userId}`);
 

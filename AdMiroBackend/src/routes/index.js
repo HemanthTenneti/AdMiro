@@ -4,6 +4,7 @@ import googleAuthRoutes from "./googleAuthRoutes.js";
 import displaysRoutes from "./displaysRoutes.js";
 import advertisementsRoutes from "./advertisementsRoutes.js";
 import loopsRoutes from "./loopsRoutes.js";
+import logsRoutes from "./logsRoutes.js";
 
 const router = express.Router();
 
@@ -33,7 +34,10 @@ router.use("/ads", advertisementsRoutes);
 // Loops routes
 router.use("/loops", loopsRoutes);
 
-// Analytics routes (will be added in Phase 7)
+// Logs routes
+router.use("/logs", logsRoutes);
+
+// Analytics routes (will be added in Phase 8)
 // router.use('/analytics', require('./analytics'));
 
 // Users routes (will be added in Phase 10)

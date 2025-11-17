@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import axiosInstance from "@/lib/axiosConfig";
 import DashboardLayout from "@/components/DashboardLayout";
 import {
   Monitor,
@@ -17,6 +18,10 @@ export default function Dashboard() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [totalDisplays, setTotalDisplays] = useState(0);
+  const [displaysLoading, setDisplaysLoading] = useState(true);
+  const [logs, setLogs] = useState([]);
+  const [logsLoading, setLogsLoading] = useState(true);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -43,6 +48,42 @@ export default function Dashboard() {
     checkAuth();
   }, [router]);
 
+  useEffect(() => {
+    const fetchDisplays = async () => {
+      try {
+        setDisplaysLoading(true);
+        const response = await axiosInstance.get("/api/displays?limit=1");
+        // The response structure is: { success, message, data: { displays, pagination: { total } } }
+        const total = response.data?.data?.pagination?.total || 0;
+        setTotalDisplays(total);
+      } catch (error) {
+        console.error("Failed to fetch displays count:", error);
+        setTotalDisplays(0);
+      } finally {
+        setDisplaysLoading(false);
+      }
+    };
+
+    const fetchLogs = async () => {
+      try {
+        setLogsLoading(true);
+        const response = await axiosInstance.get("/api/logs/recent?limit=4");
+        // The response structure is: { success, message, data: { logs } }
+        setLogs(response.data?.data?.logs || []);
+      } catch (error) {
+        console.error("Failed to fetch logs:", error);
+        setLogs([]);
+      } finally {
+        setLogsLoading(false);
+      }
+    };
+
+    if (!loading) {
+      fetchDisplays();
+      fetchLogs();
+    }
+  }, [loading]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -54,28 +95,21 @@ export default function Dashboard() {
   const stats = [
     {
       label: "Total Displays",
-      value: "24",
+      value: displaysLoading ? "..." : totalDisplays.toString(),
       icon: Monitor,
       bgColor: "#dbeafe",
       iconColor: "#3b82f6",
     },
     {
       label: "Active Ads",
-      value: "12",
+      value: "—",
       icon: Image,
       bgColor: "#e9d5ff",
       iconColor: "#a855f7",
     },
     {
-      label: "Total Impressions",
-      value: "48.5K",
-      icon: Eye,
-      bgColor: "#d1fae5",
-      iconColor: "#10b981",
-    },
-    {
-      label: "Engagement Rate",
-      value: "8.4%",
+      label: "Total Loops",
+      value: "—",
       icon: ChartLine,
       bgColor: "#fef3c7",
       iconColor: "#f59e0b",
@@ -93,11 +127,6 @@ export default function Dashboard() {
       href: "/dashboard/ads/new",
       icon: Image,
     },
-    {
-      label: "View Analytics",
-      href: "/dashboard/analytics",
-      icon: ChartLine,
-    },
   ];
 
   return (
@@ -113,7 +142,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
@@ -141,7 +170,7 @@ export default function Dashboard() {
       {/* Quick Actions */}
       <div className="rounded-lg border border-gray-200 bg-white p-6 mb-8 shadow-sm">
         <h2 className="text-xl font-bold mb-4 text-gray-900">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {quickActions.map((action, index) => {
             const Icon = action.icon;
             return (
@@ -164,44 +193,43 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Recent Activity */}
+      {/* System Logs */}
       <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="text-xl font-bold mb-4 text-gray-900">
-          Recent Activity
-        </h2>
+        <h2 className="text-xl font-bold mb-4 text-gray-900">System Logs</h2>
         <div className="space-y-4">
-          {[
-            {
-              action: "Display connected",
-              details: "Mall Display 1 (Location: Downtown)",
-              time: "2 hours ago",
-            },
-            {
-              action: "New ad created",
-              details: "Summer Campaign 2025",
-              time: "4 hours ago",
-            },
-            {
-              action: "Display updated",
-              details: "Airport Terminal 2 configuration changed",
-              time: "1 day ago",
-            },
-            {
-              action: "Analytics milestone",
-              details: "Reached 50K impressions",
-              time: "2 days ago",
-            },
-          ].map((activity, index) => (
-            <div
-              key={index}
-              className="flex items-center justify-between py-3 border-b border-gray-200 last:border-b-0">
-              <div>
-                <p className="font-medium text-gray-900">{activity.action}</p>
-                <p className="text-sm text-gray-600">{activity.details}</p>
-              </div>
-              <span className="text-sm text-gray-500">{activity.time}</span>
+          {logsLoading ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500">Loading logs...</p>
             </div>
-          ))}
+          ) : logs.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500">No activity yet</p>
+            </div>
+          ) : (
+            logs.map(log => (
+              <div
+                key={log._id}
+                className="flex items-center justify-between py-3 border-b border-gray-200 last:border-b-0">
+                <div>
+                  <p className="font-medium text-gray-900">
+                    {log.action.replace(/_/g, " ").charAt(0).toUpperCase() +
+                      log.action.replace(/_/g, " ").slice(1)}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {log.details?.description}
+                  </p>
+                </div>
+                <span className="text-sm text-gray-500">
+                  {new Date(log.createdAt).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </DashboardLayout>

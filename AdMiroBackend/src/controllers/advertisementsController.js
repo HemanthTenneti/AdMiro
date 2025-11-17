@@ -4,6 +4,7 @@ import {
   formatSuccessResponse,
   formatErrorResponse,
 } from "../utils/helpers.js";
+import * as loggingService from "../services/loggingService.js";
 
 /**
  * Create a new advertisement
@@ -113,6 +114,25 @@ const createAdvertisement = async (req, res) => {
     });
 
     await newAdvertisement.save();
+
+    // Log the action
+    await loggingService.createLog({
+      action: "create",
+      entityType: "advertisement",
+      entityId: newAdvertisement._id,
+      userId: req.user.userId,
+      details: {
+        description: `Advertisement created: ${adName}`,
+        metadata: {
+          adId,
+          adName,
+          mediaType,
+          duration: durationNum,
+        },
+      },
+      ipAddress: req.ip,
+      userAgent: req.get("user-agent"),
+    });
 
     console.log(`✅ Advertisement created: ${adId} by user ${req.user.userId}`);
 
@@ -369,6 +389,28 @@ const updateAdvertisement = async (req, res) => {
 
     await advertisement.save();
 
+    // Log the action
+    await loggingService.createLog({
+      action: "update",
+      entityType: "advertisement",
+      entityId: advertisement._id,
+      userId: req.user.userId,
+      details: {
+        description: `Advertisement updated: ${advertisement.adName}`,
+        changes: {
+          adName,
+          description,
+          duration,
+          status,
+        },
+        metadata: {
+          adId: advertisement.adId,
+        },
+      },
+      ipAddress: req.ip,
+      userAgent: req.get("user-agent"),
+    });
+
     console.log(`✅ Advertisement ${id} updated by user ${req.user.userId}`);
 
     return res
@@ -419,6 +461,23 @@ const deleteAdvertisement = async (req, res) => {
     }
 
     await Advertisement.findByIdAndDelete(id);
+
+    // Log the action
+    await loggingService.createLog({
+      action: "delete",
+      entityType: "advertisement",
+      entityId: advertisement._id,
+      userId: req.user.userId,
+      details: {
+        description: `Advertisement deleted: ${advertisement.adName}`,
+        metadata: {
+          adId: advertisement.adId,
+          adName: advertisement.adName,
+        },
+      },
+      ipAddress: req.ip,
+      userAgent: req.get("user-agent"),
+    });
 
     console.log(`✅ Advertisement ${id} deleted by user ${req.user.userId}`);
 
@@ -481,6 +540,26 @@ const updateAdvertisementStatus = async (req, res) => {
 
     advertisement.status = status;
     await advertisement.save();
+
+    // Log the action
+    await loggingService.createLog({
+      action: "status_change",
+      entityType: "advertisement",
+      entityId: advertisement._id,
+      userId: req.user.userId,
+      details: {
+        description: `Advertisement status changed to: ${status}`,
+        changes: {
+          status,
+        },
+        metadata: {
+          adId: advertisement.adId,
+          adName: advertisement.adName,
+        },
+      },
+      ipAddress: req.ip,
+      userAgent: req.get("user-agent"),
+    });
 
     console.log(
       `✅ Advertisement ${id} status updated to ${status} by user ${req.user.userId}`

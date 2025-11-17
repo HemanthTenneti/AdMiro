@@ -6,6 +6,7 @@ import {
   formatSuccessResponse,
   formatErrorResponse,
 } from "../utils/helpers.js";
+import * as loggingService from "../services/loggingService.js";
 
 /**
  * Create a new display loop
@@ -114,6 +115,26 @@ const createDisplayLoop = async (req, res) => {
 
     // Populate references
     await newLoop.populate("displayId advertisements.adId");
+
+    // Log the action
+    await loggingService.createLog({
+      action: "create",
+      entityType: "loop",
+      entityId: newLoop._id,
+      userId: req.user.userId,
+      details: {
+        description: `Display loop created: ${loopName}`,
+        metadata: {
+          loopId,
+          loopName,
+          displayId,
+          advertisementCount: validatedAds.length,
+          totalDuration,
+        },
+      },
+      ipAddress: req.ip,
+      userAgent: req.get("user-agent"),
+    });
 
     console.log(`✅ Display loop created: ${loopId} for display ${displayId}`);
 
@@ -322,6 +343,29 @@ const updateDisplayLoop = async (req, res) => {
     await loop.save();
     await loop.populate("displayId advertisements.adId");
 
+    // Log the action
+    await loggingService.createLog({
+      action: "update",
+      entityType: "loop",
+      entityId: loop._id,
+      userId: req.user.userId,
+      details: {
+        description: `Display loop updated: ${loop.loopName}`,
+        changes: {
+          loopName,
+          description,
+          rotationType,
+          advertisementCount: advertisements?.length,
+        },
+        metadata: {
+          loopId: loop.loopId,
+          displayId: loop.displayId,
+        },
+      },
+      ipAddress: req.ip,
+      userAgent: req.get("user-agent"),
+    });
+
     console.log(`✅ Loop ${id} updated`);
 
     return res
@@ -363,6 +407,24 @@ const deleteDisplayLoop = async (req, res) => {
     }
 
     await DisplayLoop.findByIdAndDelete(id);
+
+    // Log the action
+    await loggingService.createLog({
+      action: "delete",
+      entityType: "loop",
+      entityId: loop._id,
+      userId: req.user.userId,
+      details: {
+        description: `Display loop deleted: ${loop.loopName}`,
+        metadata: {
+          loopId: loop.loopId,
+          loopName: loop.loopName,
+          displayId: loop.displayId,
+        },
+      },
+      ipAddress: req.ip,
+      userAgent: req.get("user-agent"),
+    });
 
     console.log(`✅ Loop ${id} deleted`);
 
