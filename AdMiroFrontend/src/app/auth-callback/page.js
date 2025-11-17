@@ -49,9 +49,9 @@ function AuthCallbackContent() {
 
     console.log("💾 Stored in localStorage");
 
-    // Redirect to test page
+    // Redirect to dashboard
     setTimeout(() => {
-      router.push("/test");
+      router.push("/dashboard");
     }, 500);
   }, [searchParams, router]);
 

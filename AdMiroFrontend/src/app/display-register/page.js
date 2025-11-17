@@ -141,7 +141,7 @@ export default function DisplayRegisterPage() {
   return (
     <main
       ref={mainRef}
-      className="min-h-screen bg-gradient-to-br from-[#faf9f7] to-[#f5f3f0] flex items-center justify-center p-4">
+      className="min-h-screen bg-linear-to-br from-[#faf9f7] to-[#f5f3f0] flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         {/* Back Button */}
         <button
