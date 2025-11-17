@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { toast } from "sonner";
 import axiosInstance from "@/lib/axiosConfig";
 import DisplayForm from "@/components/DisplayForm";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -47,6 +48,7 @@ export default function NewDisplayPage() {
 
       // Show success message briefly
       setError(""); // Clear any errors
+      toast.success("Display created successfully!");
 
       // Redirect to displays list
       setTimeout(() => {
@@ -61,6 +63,7 @@ export default function NewDisplayPage() {
         "Failed to create display. Please try again.";
 
       setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

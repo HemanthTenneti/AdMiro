@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
+import { toast } from "sonner";
 import axiosInstance from "@/lib/axiosConfig";
 import DashboardLayout from "@/components/DashboardLayout";
 import { ArrowLeft, CircleNotch } from "phosphor-react";
@@ -46,6 +47,7 @@ export default function EditDisplayPage() {
         err.message ||
         "Failed to fetch display details.";
       setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -113,6 +115,7 @@ export default function EditDisplayPage() {
 
       console.log("✅ Display updated:", response.data);
       setSuccess("Display updated successfully!");
+      toast.success("Display updated successfully!");
 
       // Redirect after 1.5s
       setTimeout(() => {
@@ -120,7 +123,10 @@ export default function EditDisplayPage() {
       }, 1500);
     } catch (err) {
       console.error("❌ Error updating display:", err);
-      setError(err.response?.data?.message || "Failed to update display.");
+      const errorMessage =
+        err.response?.data?.message || "Failed to update display.";
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setSubmitting(false);
     }

@@ -59,3 +59,4 @@ const adminOnly = (req, res, next) => {
 };
 
 export { verifyToken, checkRole, adminOnly };
+export const auth = verifyToken;

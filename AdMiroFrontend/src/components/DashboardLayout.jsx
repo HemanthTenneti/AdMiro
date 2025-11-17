@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useLayoutEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -14,17 +14,15 @@ import {
   List,
   X,
   Clock,
+  Play,
 } from "phosphor-react";
 
 export default function DashboardLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [userInfo, setUserInfo] = useState({ name: "User", initial: "U" });
-  const router = useRouter();
-
-  // Initialize user info after mount
-  useLayoutEffect(() => {
-    const getUserInfo = () => {
+  const [userInfo, setUserInfo] = useState(() => {
+    // Only runs on client during hydration
+    if (typeof window !== "undefined") {
       try {
         const userStr = localStorage.getItem("user");
         if (userStr) {
@@ -39,10 +37,11 @@ export default function DashboardLayout({ children }) {
       } catch (err) {
         console.error("Error parsing user:", err);
       }
-      return { name: "User", initial: "U" };
-    };
-    setUserInfo(getUserInfo());
-  }, []);
+    }
+    return { name: "User", initial: "U" };
+  });
+
+  const router = useRouter();
 
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
@@ -60,9 +59,10 @@ export default function DashboardLayout({ children }) {
       icon: LinkIcon,
     },
     { label: "Advertisements", href: "/dashboard/ads", icon: Image },
-    { label: "Display Loops", href: "/dashboard/loops", icon: LinkIcon },
+    { label: "Display Loops", href: "/dashboard/loops", icon: Play },
     { label: "System Logs", href: "/dashboard/logs", icon: Clock },
     { label: "Analytics", href: "/dashboard/analytics", icon: ChartLine },
+    { label: "Profile", href: "/dashboard/profile", icon: Gear },
     { label: "Settings", href: "/dashboard/settings", icon: Gear },
   ];
 

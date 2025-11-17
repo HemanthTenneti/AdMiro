@@ -9,15 +9,15 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Plus, Trash, PencilSimple, CircleNotch } from "phosphor-react";
 import gsap from "gsap";
 
-export default function DisplaysPage() {
+export default function LoopsPage() {
   const router = useRouter();
   const mainRef = useRef(null);
-  const [displays, setDisplays] = useState([]);
+  const [loops, setLoops] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(null);
 
-  // Check auth and fetch displays
+  // Check auth and fetch loops
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
     if (!token) {
@@ -25,7 +25,7 @@ export default function DisplaysPage() {
       return;
     }
 
-    fetchDisplays();
+    fetchLoops();
   }, [router]);
 
   // Entry animation
@@ -39,49 +39,47 @@ export default function DisplaysPage() {
     }
   }, [loading]);
 
-  const fetchDisplays = async () => {
+  const fetchLoops = async () => {
     try {
       setLoading(true);
       setError("");
-      console.log("📤 Fetching displays...");
+      console.log("📤 Fetching loops...");
 
-      const response = await axiosInstance.get("/api/displays");
-      console.log("✅ Displays fetched:", response.data);
+      const response = await axiosInstance.get("/api/loops?limit=1000");
+      console.log("✅ Loops fetched:", response.data);
 
-      setDisplays(response.data.data.displays || []);
+      setLoops(response.data.data.loops || []);
     } catch (err) {
-      console.error("❌ Error fetching displays:", err);
+      console.error("❌ Error fetching loops:", err);
       const errorMessage =
-        err.response?.data?.message ||
-        err.message ||
-        "Failed to fetch displays.";
+        err.response?.data?.message || err.message || "Failed to fetch loops.";
       setError(errorMessage);
       toast.error(errorMessage);
-      setDisplays([]);
+      setLoops([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async displayId => {
-    if (!confirm("Are you sure you want to delete this display?")) {
+  const handleDelete = async loopId => {
+    if (!confirm("Are you sure you want to delete this loop?")) {
       return;
     }
 
     try {
-      setDeleteLoading(displayId);
-      console.log("🗑️ Deleting display:", displayId);
+      setDeleteLoading(loopId);
+      console.log("🗑️ Deleting loop:", loopId);
 
-      await axiosInstance.delete(`/api/displays/${displayId}`);
-      console.log("✅ Display deleted");
+      await axiosInstance.delete(`/api/loops/${loopId}`);
+      console.log("✅ Loop deleted");
 
       // Remove from local state
-      setDisplays(displays.filter(d => d._id !== displayId));
-      toast.success("Display deleted successfully!");
+      setLoops(loops.filter(l => l._id !== loopId));
+      toast.success("Loop deleted successfully!");
     } catch (err) {
-      console.error("❌ Error deleting display:", err);
+      console.error("❌ Error deleting loop:", err);
       const errorMessage =
-        err.response?.data?.message || "Failed to delete display.";
+        err.response?.data?.message || "Failed to delete loop.";
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -89,16 +87,16 @@ export default function DisplaysPage() {
     }
   };
 
-  const getStatusColor = status => {
-    switch (status) {
-      case "online":
-        return "bg-green-100 text-green-800";
-      case "offline":
-        return "bg-red-100 text-red-800";
-      case "inactive":
-        return "bg-yellow-100 text-yellow-800";
+  const getRotationTypeLabel = type => {
+    switch (type) {
+      case "sequential":
+        return "Sequential";
+      case "random":
+        return "Random";
+      case "weighted":
+        return "Weighted";
       default:
-        return "bg-gray-100 text-gray-800";
+        return type;
     }
   };
 
@@ -111,14 +109,18 @@ export default function DisplaysPage() {
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-4xl font-bold text-black mb-2">Displays</h1>
-              <p className="text-gray-600">Manage your display devices</p>
+              <h1 className="text-4xl font-bold text-black mb-2">
+                Display Loops
+              </h1>
+              <p className="text-gray-600">
+                Manage advertisement playlists for your displays
+              </p>
             </div>
             <Link
-              href="/dashboard/displays/new"
+              href="/dashboard/displays"
               className="flex items-center gap-2 px-6 py-3 bg-[#8b6f47] hover:bg-[#7a5f3a] text-white font-semibold rounded-lg transition">
               <Plus size={20} weight="bold" />
-              Create Display
+              Create Loop
             </Link>
           </div>
 
@@ -138,49 +140,43 @@ export default function DisplaysPage() {
                   className="text-[#8b6f47] animate-spin mx-auto mb-4"
                   weight="bold"
                 />
-                <p className="text-gray-600">Loading your displays...</p>
+                <p className="text-gray-600">Loading your loops...</p>
               </div>
             </div>
-          ) : displays.length === 0 ? (
+          ) : loops.length === 0 ? (
             // Empty State
             <div className="bg-white rounded-2xl border-2 border-[#e5e5e5] p-12 text-center">
               <h2 className="text-2xl font-bold text-black mb-2">
-                No displays yet
+                No loops yet
               </h2>
               <p className="text-gray-600 mb-8">
-                Create your first display to get started managing your digital
-                signage.
+                Create your first display loop to start managing advertisement
+                playlists across your displays.
               </p>
               <Link
-                href="/dashboard/displays/new"
+                href="/dashboard/displays"
                 className="inline-block px-8 py-3 bg-[#8b6f47] hover:bg-[#7a5f3a] text-white font-semibold rounded-lg transition">
-                Create Display
+                Go to Displays to Create Loop
               </Link>
             </div>
           ) : (
-            // Displays Table
+            // Loops Table
             <div className="bg-white rounded-2xl border-2 border-[#e5e5e5] overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-[#e5e5e5] bg-[#faf9f7]">
                       <th className="px-6 py-4 text-left text-sm font-semibold text-black">
-                        Display ID
+                        Loop Name
                       </th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-black">
-                        Name
+                        Display
                       </th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-black">
-                        Location
+                        Rotation Type
                       </th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-black">
-                        Resolution
-                      </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-black">
-                        Created By
-                      </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-black">
-                        Status
+                        Advertisements
                       </th>
                       <th className="px-6 py-4 text-right text-sm font-semibold text-black">
                         Actions
@@ -188,66 +184,72 @@ export default function DisplaysPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {displays.map((display, index) => (
+                    {loops.map(loop => (
                       <tr
-                        key={display._id}
+                        key={loop._id}
                         className="border-b border-[#e5e5e5] hover:bg-[#faf9f7] transition">
                         <td className="px-6 py-4">
-                          <span className="font-mono text-sm font-semibold text-[#8b6f47]">
-                            {display.displayId}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
                           <span className="text-black font-medium">
-                            {display.displayName}
+                            {loop.loopName}
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          <span className="text-gray-600">
-                            {display.location}
+                          <Link
+                            href={`/dashboard/displays/${loop.displayId}`}
+                            className="text-[#8b6f47] hover:text-[#6d5636] font-medium">
+                            {loop.displayName || "Unknown Display"}
+                          </Link>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="inline-block px-3 py-1 bg-[#8b6f47] text-white text-xs font-semibold rounded-full">
+                            {getRotationTypeLabel(loop.rotationType)}
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          <span className="text-gray-600 text-sm">
-                            {display.resolution.width} ×{" "}
-                            {display.resolution.height}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="text-gray-600 text-sm">
-                            {display.assignedAdmin?.firstName &&
-                            display.assignedAdmin?.lastName
-                              ? `${display.assignedAdmin.firstName} ${display.assignedAdmin.lastName}`
-                              : display.assignedAdmin?.username || "Unknown"}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span
-                            className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(
-                              display.status
-                            )}`}>
-                            {display.status.charAt(0).toUpperCase() +
-                              display.status.slice(1)}
-                          </span>
+                          <div className="space-y-1">
+                            {loop.advertisements &&
+                            loop.advertisements.length > 0 ? (
+                              <>
+                                {loop.advertisements
+                                  .slice(0, 2)
+                                  .map((ad, idx) => (
+                                    <div
+                                      key={idx}
+                                      className="text-sm text-gray-600">
+                                      {idx + 1}. {ad.adName || "Unknown Ad"}
+                                    </div>
+                                  ))}
+                                {loop.advertisements.length > 2 && (
+                                  <div className="text-sm text-gray-500 italic">
+                                    +{loop.advertisements.length - 2} more
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <span className="text-gray-500 text-sm">
+                                No ads assigned
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
                             <button
                               onClick={() =>
                                 router.push(
-                                  `/dashboard/displays/${display._id}`
+                                  `/dashboard/displays/${loop.displayId}/loops/edit/${loop._id}`
                                 )
                               }
                               className="p-2 text-[#8b6f47] hover:bg-[#f0ede9] rounded-lg transition"
-                              title="View/Edit details">
+                              title="Edit loop">
                               <PencilSimple size={18} weight="bold" />
                             </button>
                             <button
-                              onClick={() => handleDelete(display._id)}
-                              disabled={deleteLoading === display._id}
+                              onClick={() => handleDelete(loop._id)}
+                              disabled={deleteLoading === loop._id}
                               className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition disabled:opacity-50"
-                              title="Delete display">
-                              {deleteLoading === display._id ? (
+                              title="Delete loop">
+                              {deleteLoading === loop._id ? (
                                 <CircleNotch
                                   size={18}
                                   className="animate-spin"
@@ -267,12 +269,12 @@ export default function DisplaysPage() {
             </div>
           )}
 
-          {/* Displays Count */}
-          {displays.length > 0 && (
+          {/* Loops Count */}
+          {loops.length > 0 && (
             <div className="mt-6 text-center text-gray-600">
               <p>
-                Showing <strong>{displays.length}</strong> display
-                {displays.length !== 1 ? "s" : ""}
+                Showing <strong>{loops.length}</strong> loop
+                {loops.length !== 1 ? "s" : ""}
               </p>
             </div>
           )}

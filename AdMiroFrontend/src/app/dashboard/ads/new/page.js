@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { toast } from "sonner";
 import axiosInstance from "@/lib/axiosConfig";
 import DashboardLayout from "@/components/DashboardLayout";
 import { ArrowLeft, CircleNotch } from "phosphor-react";
@@ -148,6 +149,7 @@ export default function NewAdvertisementPage() {
         scheduledStart: "",
         scheduledEnd: "",
       });
+      toast.success("Advertisement created successfully!");
 
       // Redirect after 1.5 seconds
       setTimeout(() => {
@@ -160,6 +162,7 @@ export default function NewAdvertisementPage() {
         err.message ||
         "Failed to create advertisement.";
       setError(errorMessage);
+      toast.error(errorMessage);
       setSuccess(false);
     } finally {
       setLoading(false);

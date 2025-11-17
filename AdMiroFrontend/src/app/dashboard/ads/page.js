@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { toast } from "sonner";
 import axiosInstance from "@/lib/axiosConfig";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Plus, Trash, PencilSimple, CircleNotch } from "phosphor-react";
@@ -82,6 +83,7 @@ export default function AdvertisementsPage() {
         err.message ||
         "Failed to fetch advertisements.";
       setError(errorMessage);
+      toast.error(errorMessage);
       setAdvertisements([]);
     } finally {
       setLoading(false);
@@ -102,11 +104,13 @@ export default function AdvertisementsPage() {
 
       // Remove from local state
       setAdvertisements(advertisements.filter(a => a._id !== adId));
+      toast.success("Advertisement deleted successfully!");
     } catch (err) {
       console.error("❌ Error deleting advertisement:", err);
-      setError(
-        err.response?.data?.message || "Failed to delete advertisement."
-      );
+      const errorMessage =
+        err.response?.data?.message || "Failed to delete advertisement.";
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setDeleteLoading(null);
     }

@@ -150,6 +150,64 @@ const createDisplayLoop = async (req, res) => {
 };
 
 /**
+ * Get all display loops for the authenticated user
+ * Query: { page?, limit? }
+ * Returns: { loops, pagination, message }
+ * Auth: Required
+ */
+const getAllLoops = async (req, res) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const userId = req.user.userId?.toString?.() || req.user.userId;
+
+    // Get all displays owned by the user
+    const userDisplays = await Display.find({ assignedAdmin: userId }).select(
+      "_id"
+    );
+    const displayIds = userDisplays.map(d => d._id);
+
+    // Get all loops for user's displays
+    const loops = await DisplayLoop.find({ displayId: { $in: displayIds } })
+      .skip(skip)
+      .limit(parseInt(limit))
+      .populate("displayId", "displayName location")
+      .populate("advertisements.adId", "adName mediaType duration mediaUrl")
+      .sort({ createdAt: -1 });
+
+    const total = await DisplayLoop.countDocuments({
+      displayId: { $in: displayIds },
+    });
+
+    // Add display name to each loop for easier frontend access
+    const loopsWithDisplayNames = loops.map(loop => ({
+      ...loop.toObject(),
+      displayName: loop.displayId?.displayName || "Unknown Display",
+    }));
+
+    console.log(`✅ Fetched ${loops.length} total loops for user ${userId}`);
+
+    return res.status(200).json(
+      formatSuccessResponse(
+        {
+          loops: loopsWithDisplayNames,
+          pagination: {
+            currentPage: parseInt(page),
+            totalPages: Math.ceil(total / parseInt(limit)),
+            pageSize: parseInt(limit),
+            total,
+          },
+        },
+        "All display loops fetched successfully."
+      )
+    );
+  } catch (error) {
+    console.error("❌ Get all loops error:", error.message);
+    return res.status(500).json(formatErrorResponse(error.message));
+  }
+};
+
+/**
  * Get all display loops for a display
  * Params: { displayId }
  * Query: { page?, limit? }
@@ -528,6 +586,7 @@ const reorderLoopAdvertisements = async (req, res) => {
 };
 
 export {
+  getAllLoops,
   createDisplayLoop,
   getLoopsByDisplay,
   getLoopById,

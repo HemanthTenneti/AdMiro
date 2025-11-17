@@ -5,6 +5,7 @@ import displaysRoutes from "./displaysRoutes.js";
 import advertisementsRoutes from "./advertisementsRoutes.js";
 import loopsRoutes from "./loopsRoutes.js";
 import logsRoutes from "./logsRoutes.js";
+import profileRoutes from "./profileRoutes.js";
 
 const router = express.Router();
 
@@ -24,6 +25,9 @@ router.get("/health", (req, res) => {
 // Auth routes (traditional + Google OAuth)
 router.use("/auth", authRoutes);
 router.use("/auth", googleAuthRoutes);
+
+// Profile routes
+router.use("/profile", profileRoutes);
 
 // Displays routes
 router.use("/displays", displaysRoutes);

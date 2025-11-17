@@ -1,6 +1,7 @@
 import express from "express";
 import { verifyToken } from "../middleware/auth.js";
 import {
+  getAllLoops,
   createDisplayLoop,
   getLoopsByDisplay,
   getLoopById,
@@ -15,6 +16,9 @@ const router = express.Router();
  * Display Loop Routes
  * All routes require authentication
  */
+
+// GET /api/loops - Get all loops for the authenticated user
+router.get("/", verifyToken, getAllLoops);
 
 // POST /api/loops - Create a new display loop
 router.post("/", verifyToken, createDisplayLoop);

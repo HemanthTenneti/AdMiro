@@ -2,13 +2,14 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { toast } from "sonner";
 import axiosInstance from "@/lib/axiosConfig";
 import DashboardLayout from "@/components/DashboardLayout";
 import {
   CircleNotch,
   ArrowLeft,
   Plus,
-  Trash2,
+  Trash,
   GripVertical,
 } from "phosphor-react";
 
@@ -47,7 +48,9 @@ export default function CreateLoopPage() {
       setAds(activeAds);
     } catch (err) {
       console.error("Error fetching ads:", err);
-      setError("Failed to load advertisements");
+      const errorMessage = "Failed to load advertisements";
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -94,13 +97,17 @@ export default function CreateLoopPage() {
 
     try {
       if (!loopName.trim()) {
-        setError("Loop name is required");
+        const msg = "Loop name is required";
+        setError(msg);
+        toast.error(msg);
         setSubmitting(false);
         return;
       }
 
       if (selectedAds.length === 0) {
-        setError("Please add at least one advertisement");
+        const msg = "Please add at least one advertisement";
+        setError(msg);
+        toast.error(msg);
         setSubmitting(false);
         return;
       }
@@ -117,11 +124,15 @@ export default function CreateLoopPage() {
       };
 
       const response = await axiosInstance.post("/api/loops", payload);
+      toast.success("Loop created successfully!");
 
       // Redirect to loops list
       router.push(`/dashboard/displays/${displayId}/loops`);
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to create loop");
+      const errorMessage =
+        err.response?.data?.message || "Failed to create loop";
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setSubmitting(false);
     }

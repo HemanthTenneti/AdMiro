@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { toast } from "sonner";
 import axiosInstance from "@/lib/axiosConfig";
 import DashboardLayout from "@/components/DashboardLayout";
-import { CircleNotch, Trash2, Pencil, Plus, ListChecks } from "phosphor-react";
+import { CircleNotch, Trash, Pencil, Plus, ListChecks } from "phosphor-react";
 
 export default function DisplayLoopsPage() {
   const router = useRouter();
@@ -42,7 +43,10 @@ export default function DisplayLoopsPage() {
       setTotalPages(response.data.data.pagination.totalPages);
     } catch (err) {
       console.error("Error fetching loops:", err);
-      setError(err.response?.data?.message || "Failed to load loops");
+      const errorMessage =
+        err.response?.data?.message || "Failed to load loops";
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -61,8 +65,12 @@ export default function DisplayLoopsPage() {
       await axiosInstance.delete(`/api/loops/${loopId}`);
       setLoops(loops.filter(l => l._id !== loopId));
       setDeleteConfirm(null);
+      toast.success("Loop deleted successfully!");
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to delete loop");
+      const errorMessage =
+        err.response?.data?.message || "Failed to delete loop";
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setDeleting(false);
     }

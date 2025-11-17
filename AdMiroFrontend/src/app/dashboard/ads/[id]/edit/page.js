@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { toast } from "sonner";
 import axiosInstance from "@/lib/axiosConfig";
 import DashboardLayout from "@/components/DashboardLayout";
 import { ArrowLeft, CircleNotch } from "phosphor-react";
@@ -88,6 +89,7 @@ export default function EditAdvertisementPage() {
         err.message ||
         "Failed to fetch advertisement.";
       setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -187,6 +189,7 @@ export default function EditAdvertisementPage() {
       console.log("✅ Advertisement updated:", response.data);
 
       setSuccess(true);
+      toast.success("Advertisement updated successfully!");
 
       // Redirect after 1.5 seconds
       setTimeout(() => {
@@ -199,6 +202,7 @@ export default function EditAdvertisementPage() {
         err.message ||
         "Failed to update advertisement.";
       setError(errorMessage);
+      toast.error(errorMessage);
       setSuccess(false);
     } finally {
       setSubmitting(false);
