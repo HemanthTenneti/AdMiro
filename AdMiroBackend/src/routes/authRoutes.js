@@ -17,9 +17,9 @@ router.post("/login", authController.login);
 
 /**
  * POST /api/auth/refresh-token
- * Refresh access token
+ * Refresh access token using refresh token from request body
  */
-router.post("/refresh-token", authController.refreshToken);
+router.post("/refresh-token", authController.refreshAccessToken);
 
 /**
  * POST /api/auth/logout

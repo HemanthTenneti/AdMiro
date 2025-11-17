@@ -19,11 +19,11 @@ router.get("/health", (req, res) => {
 router.use("/auth", require("./authRoutes"));
 router.use("/auth", require("./googleAuthRoutes"));
 
-// Displays routes (Phase 4) - TODO: Add when ready
-// router.use('/displays', require('./displaysRoutes'));
+// Displays routes
+router.use("/displays", require("./displaysRoutes"));
 
-// Ads routes (will be added in Phase 5)
-// router.use('/ads', require('./ads'));
+// Advertisements routes
+router.use("/ads", require("./advertisementsRoutes"));
 
 // Loops routes (will be added in Phase 6)
 // router.use('/loops', require('./loops'));

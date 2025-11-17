@@ -8,6 +8,7 @@ const connectDB = require("./config/database");
 const corsMiddleware = require("./middleware/cors");
 const { apiLimiter } = require("./middleware/rateLimiter");
 const errorHandler = require("./middleware/errorHandler");
+const logRequest = require("./middleware/logger");
 const routes = require("./routes");
 
 const app = express();
@@ -21,6 +22,9 @@ app.use(helmet());
 
 // Logging
 app.use(morgan("dev"));
+
+// Custom request/response logger
+app.use(logRequest);
 
 // CORS
 app.use(corsMiddleware);

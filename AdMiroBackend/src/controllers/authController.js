@@ -1,5 +1,4 @@
 const AuthService = require("../services/authService");
-const User = require("../models/User");
 const {
   formatSuccessResponse,
   formatErrorResponse,
@@ -7,6 +6,8 @@ const {
 
 /**
  * Register a new user
+ * Body: { username, email, password, confirmPassword, firstName?, lastName? }
+ * Returns: { user, accessToken, refreshToken }
  */
 const register = async (req, res) => {
   try {
@@ -17,24 +18,24 @@ const register = async (req, res) => {
     if (!username || !email || !password || !confirmPassword) {
       return res
         .status(400)
-        .json(formatErrorResponse("All fields are required"));
+        .json(
+          formatErrorResponse("Username, email, and password are required.")
+        );
     }
 
     if (password !== confirmPassword) {
       return res
         .status(400)
-        .json(formatErrorResponse("Passwords do not match"));
+        .json(formatErrorResponse("Passwords do not match."));
     }
 
     if (password.length < 6) {
       return res
         .status(400)
-        .json(
-          formatErrorResponse("Password must be at least 6 characters long")
-        );
+        .json(formatErrorResponse("Password must be at least 6 characters."));
     }
 
-    // Register user
+    // Register user via service
     const result = await AuthService.register(
       username,
       email,
@@ -43,6 +44,7 @@ const register = async (req, res) => {
       lastName || ""
     );
 
+    // Return user and tokens
     return res.status(201).json(
       formatSuccessResponse(
         {
@@ -50,17 +52,19 @@ const register = async (req, res) => {
           accessToken: result.accessToken,
           refreshToken: result.refreshToken,
         },
-        "User registered successfully"
+        "User registered successfully. Use accessToken in Authorization header."
       )
     );
   } catch (error) {
-    console.error("❌ Registration error:", error.message);
+    console.error("❌ Register error:", error.message);
     return res.status(400).json(formatErrorResponse(error.message));
   }
 };
 
 /**
  * Login user
+ * Body: { usernameOrEmail, password }
+ * Returns: { user, accessToken, refreshToken }
  */
 const login = async (req, res) => {
   try {
@@ -70,12 +74,13 @@ const login = async (req, res) => {
     if (!usernameOrEmail || !password) {
       return res
         .status(400)
-        .json(formatErrorResponse("Username/Email and password are required"));
+        .json(formatErrorResponse("Username/email and password are required."));
     }
 
-    // Login user
+    // Login user via service
     const result = await AuthService.login(usernameOrEmail, password);
 
+    // Return user and tokens
     return res.status(200).json(
       formatSuccessResponse(
         {
@@ -83,7 +88,7 @@ const login = async (req, res) => {
           accessToken: result.accessToken,
           refreshToken: result.refreshToken,
         },
-        "Login successful"
+        "Login successful. Use accessToken in Authorization header."
       )
     );
   } catch (error) {
@@ -94,68 +99,82 @@ const login = async (req, res) => {
 
 /**
  * Refresh access token
+ * Body: { refreshToken }
+ * Returns: { accessToken, user }
  */
-const refreshToken = async (req, res) => {
+const refreshAccessToken = async (req, res) => {
   try {
-    const token = req.cookies.refreshToken;
+    const { refreshToken } = req.body;
 
-    if (!token) {
+    if (!refreshToken) {
       return res
-        .status(401)
-        .json(formatErrorResponse("No refresh token provided"));
+        .status(400)
+        .json(formatErrorResponse("Refresh token is required."));
     }
 
-    const result = await AuthService.refreshAccessToken(token);
+    // Refresh token via service
+    const result = await AuthService.refreshAccessToken(refreshToken);
 
+    // Return new access token
     return res.status(200).json(
       formatSuccessResponse(
         {
-          user: result.user,
           accessToken: result.accessToken,
+          user: result.user,
         },
-        "Token refreshed successfully"
+        "Token refreshed successfully."
       )
     );
   } catch (error) {
+    console.error("❌ Refresh error:", error.message);
     return res.status(401).json(formatErrorResponse(error.message));
   }
 };
 
 /**
  * Logout user
+ * Note: Stateless tokens - logout is client-side only. Delete tokens from localStorage.
  */
 const logout = async (req, res) => {
   try {
-    // Clear refresh token cookie
-    res.clearCookie("refreshToken");
-
     return res
       .status(200)
-      .json(formatSuccessResponse(null, "Logout successful"));
+      .json(
+        formatSuccessResponse(
+          null,
+          "Logged out. Please delete tokens from localStorage."
+        )
+      );
   } catch (error) {
     return res.status(500).json(formatErrorResponse(error.message));
   }
 };
 
 /**
- * Get current user profile
+ * Get current user by ID from middleware (populated by verifyToken)
  */
 const getCurrentUser = async (req, res) => {
   try {
+    // req.user.userId is set by verifyToken middleware from JWT token
     const user = await AuthService.getUserById(req.user.userId);
+
+    if (!user) {
+      return res.status(404).json(formatErrorResponse("User not found."));
+    }
 
     return res
       .status(200)
-      .json(formatSuccessResponse(user, "User retrieved successfully"));
+      .json(formatSuccessResponse(user, "User fetched successfully."));
   } catch (error) {
-    return res.status(404).json(formatErrorResponse(error.message));
+    console.error("Error fetching current user:", error.message);
+    return res.status(500).json(formatErrorResponse(error.message));
   }
 };
 
 module.exports = {
   register,
   login,
-  refreshToken,
+  refreshAccessToken,
   logout,
   getCurrentUser,
 };

@@ -456,29 +456,51 @@ export default function LoginPage() {
             )}
 
             {/* Toggle between login and register */}
-            <div className="mt-6 text-center">
-              <p className="text-gray-600">
-                {isLogin
-                  ? "Don't have an account? "
-                  : "Already have an account? "}
-                <button
-                  onClick={() => {
-                    setIsLogin(!isLogin);
-                    setError("");
-                    setFormData({
-                      usernameOrEmail: "",
-                      password: "",
-                      confirmPassword: "",
-                      username: "",
-                      email: "",
-                      firstName: "",
-                      lastName: "",
-                    });
-                  }}
-                  className="text-[#8b6f47] font-bold hover:underline">
-                  {isLogin ? "Sign up" : "Log in"}
-                </button>
-              </p>
+            <div className="mt-6 text-center border-t border-gray-200 pt-6 space-y-4">
+              <div>
+                <p className="text-gray-600">
+                  {isLogin
+                    ? "Don't have an account? "
+                    : "Already have an account? "}
+                  <button
+                    onClick={() => {
+                      setIsLogin(!isLogin);
+                      setError("");
+                      setFormData({
+                        usernameOrEmail: "",
+                        password: "",
+                        confirmPassword: "",
+                        username: "",
+                        email: "",
+                        firstName: "",
+                        lastName: "",
+                      });
+                    }}
+                    className="text-[#8b6f47] font-bold hover:underline">
+                    {isLogin ? "Sign up" : "Log in"}
+                  </button>
+                </p>
+              </div>
+
+              {/* Use as Display Button */}
+              <div className="pt-4">
+                <div className="relative mb-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-300"></div>
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-2 bg-white text-gray-600">or</span>
+                  </div>
+                </div>
+                <Link
+                  href="/display-register"
+                  className="w-full inline-block px-6 py-2 border-2 border-[#8b6f47] hover:bg-[#8b6f47] hover:text-white text-[#8b6f47] font-semibold rounded-lg transition text-center">
+                  📺 Use as Display
+                </Link>
+                <p className="text-xs text-gray-500 mt-2">
+                  Turn this device into an ad display
+                </p>
+              </div>
             </div>
 
             {/* Back to home */}

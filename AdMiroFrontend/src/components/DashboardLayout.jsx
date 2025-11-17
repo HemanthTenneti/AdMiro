@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -18,29 +18,28 @@ import {
 export default function DashboardLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [userInfo, setUserInfo] = useState({ name: "User", initial: "U" });
   const router = useRouter();
 
-  // Get user info from localStorage
-  const getUserInfo = () => {
-    if (typeof window === "undefined") return { name: "User", initial: "U" };
+  // Get user info from localStorage on client mount
+  useEffect(() => {
     const userStr = localStorage.getItem("user");
     if (userStr) {
       try {
         const user = JSON.parse(userStr);
         if (user.firstName && user.lastName) {
-          return {
+          setUserInfo({
             name: `${user.firstName} ${user.lastName}`,
             initial: user.firstName.charAt(0).toUpperCase(),
-          };
+          });
+          return;
         }
       } catch (err) {
         console.error("Error parsing user:", err);
       }
     }
-    return { name: "User", initial: "U" };
-  };
-
-  const userInfo = getUserInfo();
+    setUserInfo({ name: "User", initial: "U" });
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
