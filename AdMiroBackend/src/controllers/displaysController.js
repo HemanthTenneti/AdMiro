@@ -369,9 +369,7 @@ const registerDisplayDevice = async (req, res) => {
     if (!displayName || !location) {
       return res
         .status(400)
-        .json(
-          formatErrorResponse("Display name and location are required.")
-        );
+        .json(formatErrorResponse("Display name and location are required."));
     }
 
     if (displayName.length < 2) {
@@ -389,7 +387,10 @@ const registerDisplayDevice = async (req, res) => {
     }
 
     // Generate unique displayId
-    let displayId = `DISP-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+    let displayId = `DISP-${Date.now()}-${Math.random()
+      .toString(36)
+      .substr(2, 9)
+      .toUpperCase()}`;
 
     // Generate connection token
     const connectionToken = uuidv4();

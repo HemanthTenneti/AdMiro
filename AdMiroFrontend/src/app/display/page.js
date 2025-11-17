@@ -19,24 +19,30 @@ export default function DisplayPage() {
   const [currentAd, setCurrentAd] = useState(null);
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [loginMode, setLoginMode] = useState(false);
-  const [loginData, setLoginData] = useState({ displayId: "", connectionToken: "" });
+  const [loginData, setLoginData] = useState({
+    displayId: "",
+    connectionToken: "",
+  });
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
 
   // Report status to backend
-  const reportDisplayStatus = useCallback(async (token, status) => {
-    try {
-      console.log("📡 Reporting display status:", status);
-      await axiosInstance.post("/api/displays/report-status", {
-        connectionToken: token,
-        status,
-        currentAdPlaying: currentAd?.adId || "none",
-      });
-      console.log("✅ Status reported successfully");
-    } catch (err) {
-      console.error("❌ Error reporting status:", err);
-    }
-  }, [currentAd?.adId]);
+  const reportDisplayStatus = useCallback(
+    async (token, status) => {
+      try {
+        console.log("📡 Reporting display status:", status);
+        await axiosInstance.post("/api/displays/report-status", {
+          connectionToken: token,
+          status,
+          currentAdPlaying: currentAd?.adId || "none",
+        });
+        console.log("✅ Status reported successfully");
+      } catch (err) {
+        console.error("❌ Error reporting status:", err);
+      }
+    },
+    [currentAd?.adId]
+  );
 
   // Fetch ads for display
   const fetchAdsForDisplay = useCallback(async () => {
@@ -54,7 +60,7 @@ export default function DisplayPage() {
       }
 
       // Filter only active ads
-      const activeAds = advertisements.filter((ad) => ad.status === "active");
+      const activeAds = advertisements.filter(ad => ad.status === "active");
 
       if (activeAds.length === 0) {
         setError("No active advertisements to display");
@@ -107,7 +113,11 @@ export default function DisplayPage() {
   useEffect(() => {
     const requestFullscreen = async () => {
       try {
-        if (containerRef.current && document.fullscreenElement === null && displayId) {
+        if (
+          containerRef.current &&
+          document.fullscreenElement === null &&
+          displayId
+        ) {
           await containerRef.current.requestFullscreen().catch(() => {
             console.log("ℹ️ Fullscreen not available");
           });
@@ -122,7 +132,7 @@ export default function DisplayPage() {
 
   // Handle ESC key to exit fullscreen and return to login
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleKeyDown = e => {
       if (e.key === "Escape") {
         if (document.fullscreenElement) {
           document.exitFullscreen();
@@ -142,7 +152,7 @@ export default function DisplayPage() {
     if (!currentAd || ads.length === 0) return;
 
     const timer = setInterval(() => {
-      setTimeRemaining((prev) => {
+      setTimeRemaining(prev => {
         if (prev <= 1) {
           // Move to next ad
           const nextIndex = (currentAdIndex + 1) % ads.length;
@@ -158,7 +168,7 @@ export default function DisplayPage() {
   }, [currentAd, currentAdIndex, ads]);
 
   // Handle display login
-  const handleDisplayLogin = async (e) => {
+  const handleDisplayLogin = async e => {
     e.preventDefault();
     setLoginLoading(true);
     setLoginError("");
@@ -192,7 +202,8 @@ export default function DisplayPage() {
     } catch (err) {
       console.error("❌ Login error:", err);
       setLoginError(
-        err.response?.data?.message || "Failed to authenticate display. Please check your credentials."
+        err.response?.data?.message ||
+          "Failed to authenticate display. Please check your credentials."
       );
     } finally {
       setLoginLoading(false);
@@ -204,7 +215,11 @@ export default function DisplayPage() {
     return (
       <div className="w-screen h-screen flex items-center justify-center bg-black">
         <div className="text-center">
-          <CircleNotch size={48} className="text-white animate-spin mx-auto mb-4" weight="bold" />
+          <CircleNotch
+            size={48}
+            className="text-white animate-spin mx-auto mb-4"
+            weight="bold"
+          />
           <p className="text-white">Initializing display...</p>
         </div>
       </div>
@@ -217,7 +232,9 @@ export default function DisplayPage() {
       <div className="w-screen h-screen flex items-center justify-center bg-linear-to-br from-[#1a1a1a] to-[#2a2a2a]">
         <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl">
           <h1 className="text-3xl font-bold text-black mb-2">Display Login</h1>
-          <p className="text-gray-600 mb-6">Enter your display credentials to activate</p>
+          <p className="text-gray-600 mb-6">
+            Enter your display credentials to activate
+          </p>
 
           {loginError && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
@@ -227,11 +244,15 @@ export default function DisplayPage() {
 
           <form onSubmit={handleDisplayLogin} className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Display ID</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Display ID
+              </label>
               <input
                 type="text"
                 value={loginData.displayId}
-                onChange={(e) => setLoginData({ ...loginData, displayId: e.target.value })}
+                onChange={e =>
+                  setLoginData({ ...loginData, displayId: e.target.value })
+                }
                 placeholder="e.g., DISP-1234567890-ABC123"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b6f47] focus:border-transparent"
                 required
@@ -245,8 +266,11 @@ export default function DisplayPage() {
               <input
                 type="text"
                 value={loginData.connectionToken}
-                onChange={(e) =>
-                  setLoginData({ ...loginData, connectionToken: e.target.value })
+                onChange={e =>
+                  setLoginData({
+                    ...loginData,
+                    connectionToken: e.target.value,
+                  })
                 }
                 placeholder="e.g., ac886ad0-46d6-459d-a2b4-c46afe4aad2b"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b6f47] focus:border-transparent font-mono text-sm"
@@ -257,11 +281,14 @@ export default function DisplayPage() {
             <button
               type="submit"
               disabled={loginLoading}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#8b6f47] hover:bg-[#7a5f3a] disabled:opacity-50 text-white font-semibold rounded-lg transition"
-            >
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#8b6f47] hover:bg-[#7a5f3a] disabled:opacity-50 text-white font-semibold rounded-lg transition">
               {loginLoading ? (
                 <>
-                  <CircleNotch size={20} className="animate-spin" weight="bold" />
+                  <CircleNotch
+                    size={20}
+                    className="animate-spin"
+                    weight="bold"
+                  />
                   Authenticating...
                 </>
               ) : (
@@ -299,8 +326,7 @@ export default function DisplayPage() {
   return (
     <div
       ref={containerRef}
-      className="w-screen h-screen flex items-center justify-center bg-black overflow-hidden"
-    >
+      className="w-screen h-screen flex items-center justify-center bg-black overflow-hidden">
       {currentAd ? (
         <div className="relative w-full h-full flex items-center justify-center">
           {/* Ad Display Area */}
@@ -333,7 +359,9 @@ export default function DisplayPage() {
             <div>Display: {displayId?.substring(0, 20)}...</div>
             <div>Ad: {currentAd.adName}</div>
             <div>Time: {timeRemaining}s</div>
-            <div>({currentAdIndex + 1}/{ads.length})</div>
+            <div>
+              ({currentAdIndex + 1}/{ads.length})
+            </div>
           </div>
 
           {/* Time remaining indicator (top right) */}
@@ -343,7 +371,11 @@ export default function DisplayPage() {
         </div>
       ) : (
         <div className="text-center">
-          <CircleNotch size={48} className="text-white animate-spin mx-auto mb-4" weight="bold" />
+          <CircleNotch
+            size={48}
+            className="text-white animate-spin mx-auto mb-4"
+            weight="bold"
+          />
           <p className="text-white">Loading advertisements...</p>
         </div>
       )}

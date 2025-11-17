@@ -58,14 +58,14 @@ export default function DisplayRegisterPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = e => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       [name]: value,
     }));
     if (errors[name]) {
-      setErrors((prev) => ({
+      setErrors(prev => ({
         ...prev,
         [name]: "",
       }));
@@ -85,7 +85,7 @@ export default function DisplayRegisterPage() {
     };
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -141,14 +141,12 @@ export default function DisplayRegisterPage() {
   return (
     <main
       ref={mainRef}
-      className="min-h-screen bg-gradient-to-br from-[#faf9f7] to-[#f5f3f0] flex items-center justify-center p-4"
-    >
+      className="min-h-screen bg-gradient-to-br from-[#faf9f7] to-[#f5f3f0] flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         {/* Back Button */}
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-gray-600 hover:text-black mb-8 transition"
-        >
+          className="flex items-center gap-2 text-gray-600 hover:text-black mb-8 transition">
           <ArrowLeft size={20} weight="bold" />
           Back
         </button>
@@ -171,7 +169,9 @@ export default function DisplayRegisterPage() {
           <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
             <Check size={24} className="text-green-600" weight="bold" />
             <div>
-              <p className="font-semibold text-green-900">Registration Success!</p>
+              <p className="font-semibold text-green-900">
+                Registration Success!
+              </p>
               <p className="text-sm text-green-700">
                 Redirecting to display mode...
               </p>
@@ -187,7 +187,9 @@ export default function DisplayRegisterPage() {
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl border-2 border-[#e5e5e5] p-8 space-y-6">
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white rounded-2xl border-2 border-[#e5e5e5] p-8 space-y-6">
           {/* Display Name */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -234,10 +236,12 @@ export default function DisplayRegisterPage() {
           <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-600">
             <p className="font-semibold mb-2">Device Information:</p>
             <p>
-              <strong>Resolution:</strong> {window.innerWidth} x {window.innerHeight}
+              <strong>Resolution:</strong> {window.innerWidth} x{" "}
+              {window.innerHeight}
             </p>
             <p className="text-xs mt-1 truncate">
-              <strong>Browser:</strong> {navigator.userAgent.substring(0, 60)}...
+              <strong>Browser:</strong> {navigator.userAgent.substring(0, 60)}
+              ...
             </p>
           </div>
 
@@ -245,8 +249,7 @@ export default function DisplayRegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-[#8b6f47] hover:bg-[#7a5f3a] disabled:opacity-50 text-white font-semibold rounded-lg transition"
-          >
+            className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-[#8b6f47] hover:bg-[#7a5f3a] disabled:opacity-50 text-white font-semibold rounded-lg transition">
             {loading ? (
               <>
                 <CircleNotch size={20} className="animate-spin" weight="bold" />
@@ -260,7 +263,9 @@ export default function DisplayRegisterPage() {
 
         {/* Info Section */}
         <div className="mt-8 bg-blue-50 rounded-2xl border border-blue-200 p-6">
-          <h3 className="font-semibold text-blue-900 mb-3">💡 What happens next?</h3>
+          <h3 className="font-semibold text-blue-900 mb-3">
+            💡 What happens next?
+          </h3>
           <ul className="space-y-2 text-sm text-blue-800">
             <li>✅ Your device will be registered as a display</li>
             <li>✅ It will enter full-screen ad display mode</li>
