@@ -347,7 +347,7 @@ export default function AdvertisementDetailPage() {
                       </code>
                       <button
                         onClick={() => copyToClipboard(ad.mediaUrl, "url")}
-                        className="p-2 hover:bg-gray-200 rounded transition flex-shrink-0">
+                        className="p-2 hover:bg-gray-200 rounded transition shrink-0">
                         {copiedField === "url" ? (
                           <Check
                             size={18}
@@ -406,14 +406,14 @@ export default function AdvertisementDetailPage() {
                 </h2>
 
                 <div className="space-y-4">
-                  <div className="text-center p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg">
+                  <div className="text-center p-4 bg-linear-to-r from-blue-50 to-blue-100 rounded-lg">
                     <p className="text-sm text-gray-600">Views</p>
                     <p className="text-3xl font-bold text-blue-900">
                       {ad.views || 0}
                     </p>
                   </div>
 
-                  <div className="text-center p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-lg">
+                  <div className="text-center p-4 bg-linear-to-r from-green-50 to-green-100 rounded-lg">
                     <p className="text-sm text-gray-600">Clicks</p>
                     <p className="text-3xl font-bold text-green-900">
                       {ad.clicks || 0}
@@ -421,7 +421,7 @@ export default function AdvertisementDetailPage() {
                   </div>
 
                   {ad.views > 0 && (
-                    <div className="text-center p-4 bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg">
+                    <div className="text-center p-4 bg-linear-to-r from-purple-50 to-purple-100 rounded-lg">
                       <p className="text-sm text-gray-600">
                         Click-Through Rate
                       </p>

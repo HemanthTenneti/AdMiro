@@ -171,6 +171,9 @@ export default function DisplaysPage() {
                         Resolution
                       </th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-black">
+                        Created By
+                      </th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-black">
                         Status
                       </th>
                       <th className="px-6 py-4 text-right text-sm font-semibold text-black">
@@ -202,6 +205,14 @@ export default function DisplaysPage() {
                           <span className="text-gray-600 text-sm">
                             {display.resolution.width} ×{" "}
                             {display.resolution.height}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-gray-600 text-sm">
+                            {display.assignedAdmin?.firstName &&
+                            display.assignedAdmin?.lastName
+                              ? `${display.assignedAdmin.firstName} ${display.assignedAdmin.lastName}`
+                              : display.assignedAdmin?.username || "Unknown"}
                           </span>
                         </td>
                         <td className="px-6 py-4">

@@ -159,6 +159,7 @@ const getDisplays = async (req, res) => {
     );
 
     const displays = await Display.find(filter)
+      .populate("assignedAdmin", "firstName lastName username email")
       .skip(skip)
       .limit(parseInt(limit))
       .sort({ createdAt: -1 });
@@ -200,18 +201,33 @@ const getDisplayById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Don't populate - just get the raw display with assignedAdmin as ObjectId
-    const display = await Display.findById(id);
+    // Populate admin info
+    const display = await Display.findById(id).populate(
+      "assignedAdmin",
+      "firstName lastName username email"
+    );
 
     if (!display) {
       return res.status(404).json(formatErrorResponse("Display not found."));
     }
 
     // Check if user has access to this display
-    // assignedAdmin is stored as ObjectId, so compare directly
-    const displayOwnerId =
-      display.assignedAdmin?.toString() || display.assignedAdmin;
-    const userId = req.user.userId?.toString?.() || req.user.userId;
+    // If assignedAdmin is null, assign it to the requesting user
+    if (!display.assignedAdmin) {
+      display.assignedAdmin = req.user.userId;
+      await display.save();
+      // Populate the admin info after saving
+      await display.populate(
+        "assignedAdmin",
+        "firstName lastName username email"
+      );
+    }
+
+    // Get the owner ID as a string for comparison
+    const displayOwnerId = display.assignedAdmin?._id
+      ? display.assignedAdmin._id.toString()
+      : display.assignedAdmin?.toString?.() || display.assignedAdmin;
+    const userId = req.user.userId.toString();
 
     console.log(`🔍 Permission check for display ${id}:`);
     console.log(`   Display owner ID: ${displayOwnerId}`);
@@ -259,10 +275,15 @@ const updateDisplay = async (req, res) => {
       return res.status(404).json(formatErrorResponse("Display not found."));
     }
 
-    // Compare as strings since both should be ObjectId strings
-    const displayOwnerId =
-      display.assignedAdmin?.toString?.() || display.assignedAdmin?.toString();
-    const userId = req.user.userId?.toString?.() || req.user.userId;
+    // If no owner, assign to current user
+    if (!display.assignedAdmin) {
+      display.assignedAdmin = req.user.userId;
+      await display.save();
+    }
+
+    // Compare as strings
+    const displayOwnerId = display.assignedAdmin.toString();
+    const userId = req.user.userId.toString();
 
     if (displayOwnerId !== userId) {
       return res
@@ -367,10 +388,15 @@ const deleteDisplay = async (req, res) => {
       return res.status(404).json(formatErrorResponse("Display not found."));
     }
 
-    // Compare as strings since both should be ObjectId strings
-    const displayOwnerId =
-      display.assignedAdmin?.toString?.() || display.assignedAdmin?.toString();
-    const userId = req.user.userId?.toString?.() || req.user.userId;
+    // If no owner, assign to current user for permission check
+    if (!display.assignedAdmin) {
+      display.assignedAdmin = req.user.userId;
+      await display.save();
+    }
+
+    // Compare as strings
+    const displayOwnerId = display.assignedAdmin.toString();
+    const userId = req.user.userId.toString();
 
     if (displayOwnerId !== userId) {
       return res

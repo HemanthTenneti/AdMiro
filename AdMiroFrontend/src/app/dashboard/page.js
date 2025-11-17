@@ -129,6 +129,36 @@ export default function Dashboard() {
     },
   ];
 
+  const getActionColor = action => {
+    switch (action) {
+      case "create":
+        return "bg-blue-50";
+      case "update":
+        return "bg-orange-50";
+      case "delete":
+        return "bg-red-50";
+      case "status_change":
+        return "bg-purple-50";
+      default:
+        return "bg-gray-50";
+    }
+  };
+
+  const getActionBadgeColor = action => {
+    switch (action) {
+      case "create":
+        return "bg-blue-100 text-blue-800 border border-blue-300";
+      case "update":
+        return "bg-orange-100 text-orange-800 border border-orange-300";
+      case "delete":
+        return "bg-red-100 text-red-800 border border-red-300";
+      case "status_change":
+        return "bg-purple-100 text-purple-800 border border-purple-300";
+      default:
+        return "bg-gray-100 text-gray-800 border border-gray-300";
+    }
+  };
+
   return (
     <DashboardLayout>
       {/* Welcome Section */}
@@ -196,7 +226,7 @@ export default function Dashboard() {
       {/* System Logs */}
       <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
         <h2 className="text-xl font-bold mb-4 text-gray-900">System Logs</h2>
-        <div className="space-y-4">
+        <div className="space-y-2">
           {logsLoading ? (
             <div className="text-center py-8">
               <p className="text-gray-500">Loading logs...</p>
@@ -209,17 +239,28 @@ export default function Dashboard() {
             logs.map(log => (
               <div
                 key={log._id}
-                className="flex items-center justify-between py-3 border-b border-gray-200 last:border-b-0">
-                <div>
-                  <p className="font-medium text-gray-900">
-                    {log.action.replace(/_/g, " ").charAt(0).toUpperCase() +
-                      log.action.replace(/_/g, " ").slice(1)}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    {log.details?.description}
-                  </p>
+                className={`flex items-center justify-between py-4 px-4 rounded-lg border border-gray-200 transition ${getActionColor(
+                  log.action
+                )}`}>
+                <div className="flex items-center gap-3 flex-1">
+                  <span
+                    className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getActionBadgeColor(
+                      log.action
+                    )}`}>
+                    {log.action.replace(/_/g, " ").toUpperCase()}
+                  </span>
+                  <div>
+                    <p className="font-medium text-gray-900">
+                      {log.details?.description}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {log.userId?.firstName && log.userId?.lastName
+                        ? `${log.userId.firstName} ${log.userId.lastName}`
+                        : log.userId?.username || "Unknown"}
+                    </p>
+                  </div>
                 </div>
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-500 whitespace-nowrap ml-4">
                   {new Date(log.createdAt).toLocaleDateString("en-US", {
                     month: "short",
                     day: "numeric",

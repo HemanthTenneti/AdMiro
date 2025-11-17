@@ -3,6 +3,9 @@ import * as logsController from "../controllers/logsController.js";
 
 const router = express.Router();
 
+// Debug endpoint - get raw logs
+router.get("/debug/raw", logsController.getDebugRawLogs);
+
 // Get all logs with filters and pagination
 router.get("/", logsController.getLogs);
 

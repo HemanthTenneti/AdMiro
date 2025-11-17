@@ -5,8 +5,22 @@ import SystemLog from "../models/SystemLog.js";
  */
 export const createLog = async logData => {
   try {
+    console.log("Creating log with data:", {
+      userId: logData.userId,
+      userIdType: typeof logData.userId,
+      action: logData.action,
+      entityType: logData.entityType,
+    });
+
     const log = new SystemLog(logData);
     await log.save();
+
+    console.log("Log saved successfully:", {
+      _id: log._id,
+      userId: log.userId,
+      userIdType: typeof log.userId,
+    });
+
     return log;
   } catch (error) {
     console.error("Error creating log:", error);

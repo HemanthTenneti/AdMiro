@@ -1,5 +1,45 @@
 import * as loggingService from "../services/loggingService.js";
 import SystemLog from "../models/SystemLog.js";
+import User from "../models/User.js";
+
+/**
+ * Debug endpoint - get raw logs without population
+ * GET /api/logs/debug/raw
+ */
+export const getDebugRawLogs = async (req, res) => {
+  try {
+    const logs = await SystemLog.find().limit(10);
+    const users = await User.find().limit(10);
+
+    res.status(200).json({
+      success: true,
+      message: "Raw logs fetched",
+      data: {
+        logs: logs.map(log => ({
+          _id: log._id,
+          action: log.action,
+          userId: log.userId,
+          userIdType: typeof log.userId,
+          createdAt: log.createdAt,
+        })),
+        users: users.map(user => ({
+          _id: user._id,
+          _idType: typeof user._id,
+          username: user.username,
+          firstName: user.firstName,
+          lastName: user.lastName,
+        })),
+      },
+    });
+  } catch (error) {
+    console.error("Error getting debug logs:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching debug logs",
+      error: error.message,
+    });
+  }
+};
 
 /**
  * Get all logs with filters and pagination

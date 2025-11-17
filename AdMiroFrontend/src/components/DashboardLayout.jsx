@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -13,6 +13,7 @@ import {
   SignOut,
   List,
   X,
+  Clock,
 } from "phosphor-react";
 
 export default function DashboardLayout({ children }) {
@@ -21,24 +22,26 @@ export default function DashboardLayout({ children }) {
   const [userInfo, setUserInfo] = useState({ name: "User", initial: "U" });
   const router = useRouter();
 
-  // Get user info from localStorage on client mount
-  useEffect(() => {
-    const userStr = localStorage.getItem("user");
-    if (userStr) {
+  // Initialize user info after mount
+  useLayoutEffect(() => {
+    const getUserInfo = () => {
       try {
-        const user = JSON.parse(userStr);
-        if (user.firstName && user.lastName) {
-          setUserInfo({
-            name: `${user.firstName} ${user.lastName}`,
-            initial: user.firstName.charAt(0).toUpperCase(),
-          });
-          return;
+        const userStr = localStorage.getItem("user");
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          if (user.firstName && user.lastName) {
+            return {
+              name: `${user.firstName} ${user.lastName}`,
+              initial: user.firstName.charAt(0).toUpperCase(),
+            };
+          }
         }
       } catch (err) {
         console.error("Error parsing user:", err);
       }
-    }
-    setUserInfo({ name: "User", initial: "U" });
+      return { name: "User", initial: "U" };
+    };
+    setUserInfo(getUserInfo());
   }, []);
 
   const handleLogout = () => {
@@ -58,6 +61,7 @@ export default function DashboardLayout({ children }) {
     },
     { label: "Advertisements", href: "/dashboard/ads", icon: Image },
     { label: "Display Loops", href: "/dashboard/loops", icon: LinkIcon },
+    { label: "System Logs", href: "/dashboard/logs", icon: Clock },
     { label: "Analytics", href: "/dashboard/analytics", icon: ChartLine },
     { label: "Settings", href: "/dashboard/settings", icon: Gear },
   ];
@@ -88,7 +92,10 @@ export default function DashboardLayout({ children }) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  onClick={() => setSidebarOpen(false)}
+                  onClick={() => {
+                    setSidebarOpen(false);
+                    setProfileMenuOpen(false);
+                  }}
                   className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition group">
                   <IconComponent
                     size={20}
@@ -156,21 +163,30 @@ export default function DashboardLayout({ children }) {
 
               {/* Profile Dropdown */}
               {profileMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-                  <Link
-                    href="/dashboard/profile"
-                    className="block px-4 py-3 text-gray-700 hover:bg-gray-50 transition">
-                    View Profile
-                  </Link>
-                  <button
-                    onClick={() => {
-                      setProfileMenuOpen(false);
-                      handleLogout();
-                    }}
-                    className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 transition border-t border-gray-200">
-                    Logout
-                  </button>
-                </div>
+                <>
+                  {/* Click outside overlay */}
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setProfileMenuOpen(false)}
+                  />
+                  {/* Menu */}
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                    <Link
+                      href="/dashboard/profile"
+                      onClick={() => setProfileMenuOpen(false)}
+                      className="block px-4 py-3 text-gray-700 hover:bg-gray-50 transition">
+                      View Profile
+                    </Link>
+                    <button
+                      onClick={() => {
+                        setProfileMenuOpen(false);
+                        handleLogout();
+                      }}
+                      className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 transition border-t border-gray-200">
+                      Logout
+                    </button>
+                  </div>
+                </>
               )}
             </div>
           </div>
@@ -186,7 +202,10 @@ export default function DashboardLayout({ children }) {
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 md:hidden z-40"
-          onClick={() => setSidebarOpen(false)}
+          onClick={() => {
+            setSidebarOpen(false);
+            setProfileMenuOpen(false);
+          }}
         />
       )}
     </div>
