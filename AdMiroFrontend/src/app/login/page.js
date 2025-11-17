@@ -279,7 +279,10 @@ export default function LoginPage() {
 
                 {/* Google OAuth Button */}
                 <a
-                  href="http://localhost:8000/api/auth/google"
+                  href={`${
+                    process.env.NEXT_PUBLIC_API_BASE_URL ||
+                    "http://localhost:8000"
+                  }/api/auth/google`}
                   className="w-full flex items-center justify-center gap-3 px-4 py-3 border-2 border-[#e5e5e5] text-black font-semibold rounded-lg hover:bg-gray-50 transition">
                   <svg
                     className="w-5 h-5"
@@ -427,7 +430,10 @@ export default function LoginPage() {
 
                 {/* Google OAuth Button */}
                 <a
-                  href="http://localhost:8000/api/auth/google"
+                  href={`${
+                    process.env.NEXT_PUBLIC_API_BASE_URL ||
+                    "http://localhost:8000"
+                  }/api/auth/google`}
                   className="w-full flex items-center justify-center gap-3 px-4 py-3 border-2 border-[#e5e5e5] text-black font-semibold rounded-lg hover:bg-gray-50 transition">
                   <svg
                     className="w-5 h-5"

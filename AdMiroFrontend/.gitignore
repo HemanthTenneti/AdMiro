@@ -25,7 +25,7 @@ pnpm-lock.yaml
 .env
 .env.local
 .env.*.local
-.env.production.local
+.env.production
 
 # IDE & Editor
 .vscode/
