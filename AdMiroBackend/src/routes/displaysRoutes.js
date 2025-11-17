@@ -62,7 +62,7 @@ router.get("/by-token/:token", getDisplayByToken);
  * POST /api/displays/report-status
  * Report display status (heartbeat from browser display)
  * Auth: Not required (uses connection token)
- * Body: { token, status, currentAdPlaying?, isPlaying? }
+ * Body: { connectionToken, status, currentAdPlaying?, isPlaying? }
  */
 router.post("/report-status", reportDisplayStatus);
 

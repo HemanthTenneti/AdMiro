@@ -48,7 +48,7 @@ export default function DisplayPage() {
   const fetchAdsForDisplay = useCallback(async () => {
     try {
       console.log("📺 Fetching advertisements...");
-      const response = await axiosInstance.get("/api/ads?limit=100");
+      const response = await axiosInstance.get("/api/ads/public?limit=100");
       console.log("✅ Ads fetched:", response.data);
 
       const advertisements = response.data.data.advertisements || [];

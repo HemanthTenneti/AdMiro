@@ -8,15 +8,19 @@ const {
   updateAdvertisement,
   deleteAdvertisement,
   updateAdvertisementStatus,
+  getPublicAdvertisements,
 } = require("../controllers/advertisementsController");
 
 /**
  * Advertisement Routes
- * All routes require authentication via verifyToken middleware
+ * Most routes require authentication via verifyToken middleware
  */
 
 // POST /api/ads - Create a new advertisement
 router.post("/", verifyToken, createAdvertisement);
+
+// GET /api/ads/public - Get all active advertisements (public endpoint for displays)
+router.get("/public", getPublicAdvertisements);
 
 // GET /api/ads - Get all advertisements for the current user (with pagination, sorting, filtering)
 router.get("/", verifyToken, getAdvertisements);

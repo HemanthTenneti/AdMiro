@@ -500,6 +500,51 @@ const updateAdvertisementStatus = async (req, res) => {
   }
 };
 
+/**
+ * Get all active advertisements (public endpoint for displays)
+ * Query: { page?, limit? }
+ * Returns: { advertisements, pagination, message }
+ * Auth: Not required (public endpoint for displays)
+ */
+const getPublicAdvertisements = async (req, res) => {
+  try {
+    const { page = 1, limit = 100 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Only fetch active advertisements
+    const filter = { status: "active" };
+
+    console.log("🔍 Fetching public advertisements (active only)");
+
+    const advertisements = await Advertisement.find(filter)
+      .skip(skip)
+      .limit(parseInt(limit))
+      .sort({ createdAt: -1 });
+
+    const total = await Advertisement.countDocuments(filter);
+
+    console.log(`✅ Fetched ${advertisements.length} public advertisements`);
+
+    return res.status(200).json(
+      formatSuccessResponse(
+        {
+          advertisements,
+          pagination: {
+            currentPage: parseInt(page),
+            totalPages: Math.ceil(total / parseInt(limit)),
+            pageSize: parseInt(limit),
+            total,
+          },
+        },
+        "Public advertisements fetched successfully."
+      )
+    );
+  } catch (error) {
+    console.error("❌ Get public advertisements error:", error.message);
+    return res.status(500).json(formatErrorResponse(error.message));
+  }
+};
+
 module.exports = {
   createAdvertisement,
   getAdvertisements,
@@ -507,4 +552,5 @@ module.exports = {
   updateAdvertisement,
   deleteAdvertisement,
   updateAdvertisementStatus,
+  getPublicAdvertisements,
 };

@@ -472,21 +472,21 @@ const getDisplayByToken = async (req, res) => {
 
 /**
  * Report display status (heartbeat from browser display)
- * Body: { token, status, currentAdPlaying, isPlaying }
+ * Body: { connectionToken, status, currentAdPlaying, isPlaying }
  * Returns: { message }
  * Auth: Not required (uses connection token)
  */
 const reportDisplayStatus = async (req, res) => {
   try {
-    const { token, status, currentAdPlaying, isPlaying } = req.body;
+    const { connectionToken, status, currentAdPlaying, isPlaying } = req.body;
 
-    if (!token) {
+    if (!connectionToken) {
       return res
         .status(400)
         .json(formatErrorResponse("Connection token is required."));
     }
 
-    const display = await Display.findOne({ connectionToken: token });
+    const display = await Display.findOne({ connectionToken: connectionToken });
 
     if (!display) {
       return res.status(404).json(formatErrorResponse("Display not found."));
