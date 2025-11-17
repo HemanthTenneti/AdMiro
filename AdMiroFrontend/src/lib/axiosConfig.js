@@ -6,33 +6,35 @@ const axiosInstance = axios.create({
   timeout: 15000, // 15 second timeout
 });
 
-// Retry interceptor for failed requests
+// Request interceptor to add Authorization header
+axiosInstance.interceptors.request.use(
+  config => {
+    // Add token from localStorage to Authorization header
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("accessToken");
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    }
+    return config;
+  },
+  error => Promise.reject(error)
+);
+
+// Response error handler
 axiosInstance.interceptors.response.use(
   response => response,
-  async error => {
-    const config = error.config;
-
-    // Don't retry if no config
-    if (!config) {
-      return Promise.reject(error);
+  error => {
+    // Handle 401 - token expired or invalid
+    if (error.response?.status === 401) {
+      // Clear auth data and redirect to login
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("user");
+      }
     }
-
-    // Initialize retry count
-    config.retryCount = config.retryCount || 0;
-    config.retryCount += 1;
-
-    // Max 2 retries (total 3 attempts)
-    if (config.retryCount > 2) {
-      return Promise.reject(error);
-    }
-
-    // Wait before retrying (exponential backoff)
-    const delayMs = 1000 * Math.pow(2, config.retryCount - 1); // 1s, 2s
-    console.log(`⏳ Retry attempt ${config.retryCount} after ${delayMs}ms...`);
-    await new Promise(resolve => setTimeout(resolve, delayMs));
-
-    // Retry the request
-    return axiosInstance(config);
+    return Promise.reject(error);
   }
 );
 

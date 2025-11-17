@@ -44,12 +44,12 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Rate limiting
-app.use("/api/", apiLimiter);
-
-// Body parsing
+// Body parsing (must come before rate limiting)
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Rate limiting
+app.use("/api/", apiLimiter);
 
 /**
  * Routes

@@ -142,10 +142,10 @@ export default function Home() {
     <main className="min-h-screen bg-[#faf9f7]" ref={mainRef}>
       {/* Navigation */}
       <nav className="border-b border-[#e5e5e5] sticky top-0 z-50 bg-[#faf9f7]/95 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-8 py-4 flex justify-between items-center">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 flex justify-between items-center">
           <Link
             href="/"
-            className="text-2xl font-bold text-black flex items-center gap-2">
+            className="text-lg md:text-2xl font-bold text-black flex items-center gap-2">
             <div className="w-6 h-6 bg-[#8b6f47] rounded flex items-center justify-center text-white text-xs font-bold">
               A
             </div>
@@ -176,15 +176,15 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-8 py-32">
+      <section className="max-w-7xl mx-auto px-4 md:px-8 py-16 md:py-32">
         <div className="max-w-3xl">
           <h1
-            className="text-7xl md:text-8xl font-bold leading-tight text-black mb-8"
+            className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-bold leading-tight text-black mb-6 md:mb-8"
             ref={heroTitleRef}>
             One platform. Zero complexity.
           </h1>
           <p
-            className="text-xl text-gray-700 mb-12 leading-relaxed max-w-2xl"
+            className="text-base md:text-lg lg:text-xl text-gray-700 mb-8 md:mb-12 leading-relaxed max-w-2xl"
             ref={heroDescRef}>
             Manage digital displays and advertisements at scale. Push content in
             real-time, track performance, and grow your business—all from one
@@ -194,7 +194,7 @@ export default function Home() {
           <div className="flex gap-4 flex-wrap" ref={heroCTARef}>
             <Link
               href="/login"
-              className="px-8 py-4 border-2 border-[#8b6f47] text-black font-bold rounded-lg hover:bg-[#f5f0e8] transition inline-flex items-center gap-2 text-lg">
+              className="px-6 md:px-8 py-3 md:py-4 border-2 border-[#8b6f47] text-black font-bold rounded-lg hover:bg-[#f5f0e8] transition inline-flex items-center gap-2 text-base md:text-lg">
               Get started free
               <ArrowRight size={20} weight="bold" />
             </Link>
@@ -203,12 +203,12 @@ export default function Home() {
       </section>
 
       {/* Trust Section */}
-      <section className="border-y border-[#e5e5e5] bg-[#f5f0e8] py-24">
-        <div className="max-w-7xl mx-auto px-8">
+      <section className="border-y border-[#e5e5e5] bg-[#f5f0e8] py-16 md:py-24">
+        <div className="max-w-7xl mx-auto px-4 md:px-8">
           <p className="text-center text-base text-gray-600 mb-12 font-bold">
             Trusted by leading businesses
           </p>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-12 items-center justify-center">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-6 md:gap-12 items-center justify-center">
             {["OpenAI", "Figma", "Stripe", "Vercel", "Notion"].map(company => (
               <div
                 key={company}
@@ -222,18 +222,20 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="max-w-7xl mx-auto px-8 py-32">
-        <div className="mb-20">
-          <h2 className="text-5xl font-bold text-black mb-4">
+      <section
+        id="features"
+        className="max-w-7xl mx-auto px-4 md:px-8 py-16 md:py-32">
+        <div className="mb-12 md:mb-20">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-black mb-4">
             Everything you need
           </h2>
-          <p className="text-lg text-gray-700 max-w-2xl">
+          <p className="text-base md:text-lg text-gray-700 max-w-2xl">
             Complete control over your display network and advertising
             campaigns.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
           {[
             {
               title: "Real-time Display Control",
@@ -277,11 +279,11 @@ export default function Home() {
               <div
                 key={i}
                 data-animate-card
-                className="p-8 border border-[#e5e5e5] rounded-xl hover:border-[#8b6f47] hover:shadow-lg transition">
+                className="p-6 md:p-8 border border-[#e5e5e5] rounded-xl hover:border-[#8b6f47] hover:shadow-lg transition">
                 <div className="w-12 h-12 bg-[#f5f0e8] rounded-lg flex items-center justify-center mb-4">
                   <Icon size={24} weight="bold" className="text-[#8b6f47]" />
                 </div>
-                <h3 className="text-lg font-bold text-black mb-3">
+                <h3 className="text-base md:text-lg font-bold text-black mb-3">
                   {feature.title}
                 </h3>
                 <p className="text-gray-700 leading-relaxed">
@@ -295,15 +297,17 @@ export default function Home() {
 
       {/* How It Works */}
       <section id="howit" className="bg-[#f5f0e8] border-y border-[#e5e5e5]">
-        <div className="max-w-7xl mx-auto px-8 py-32">
-          <div className="mb-20">
-            <h2 className="text-5xl font-bold text-black mb-4">How it works</h2>
-            <p className="text-lg text-gray-700">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-16 md:py-32">
+          <div className="mb-12 md:mb-20">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-black mb-4">
+              How it works
+            </h2>
+            <p className="text-base md:text-lg text-gray-700">
               Get started in minutes with our simple 4-step process.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
             {[
               {
                 step: "01",
@@ -330,17 +334,17 @@ export default function Home() {
                   "Track real-time analytics. See impressions, engagement metrics, and optimize based on performance data.",
               },
             ].map((item, i) => (
-              <div key={i} data-animate-step className="flex gap-8">
+              <div key={i} data-animate-step className="flex gap-4 md:gap-8">
                 <div className="shrink-0">
-                  <div className="flex items-center justify-center h-16 w-16 rounded-lg bg-[#8b6f47] text-white font-bold text-lg">
+                  <div className="flex items-center justify-center h-12 w-12 md:h-16 md:w-16 rounded-lg bg-[#8b6f47] text-white font-bold text-base md:text-lg">
                     {item.step}
                   </div>
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-xl font-bold text-black mb-3">
+                  <h3 className="text-base md:text-xl font-bold text-black mb-3">
                     {item.title}
                   </h3>
-                  <p className="text-gray-700 leading-relaxed">
+                  <p className="text-sm md:text-base text-gray-700 leading-relaxed">
                     {item.description}
                   </p>
                 </div>
@@ -351,18 +355,18 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="max-w-7xl mx-auto px-8 py-32">
-        <div className="bg-[#8b6f47] rounded-3xl p-16 md:p-20 text-center">
-          <h2 className="text-5xl md:text-6xl font-bold text-white mb-6">
+      <section className="max-w-7xl mx-auto px-4 md:px-8 py-16 md:py-32">
+        <div className="bg-[#8b6f47] rounded-3xl p-8 md:p-16 lg:p-20 text-center">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-white mb-4 md:mb-6">
             Ready to simplify display management?
           </h2>
-          <p className="text-xl text-amber-50 mb-10 max-w-2xl mx-auto">
+          <p className="text-base md:text-lg lg:text-xl text-amber-50 mb-8 md:mb-10 max-w-2xl mx-auto">
             Join teams managing thousands of displays worldwide. Start free,
             upgrade when you need more.
           </p>
           <Link
             href="/login"
-            className="inline-block px-10 py-4 bg-white text-[#8b6f47] rounded-lg font-semibold hover:bg-amber-50 transition">
+            className="inline-block px-8 py-3 md:px-10 md:py-4 bg-white text-[#8b6f47] rounded-lg font-semibold hover:bg-amber-50 transition text-sm md:text-base">
             Get started free
           </Link>
         </div>
@@ -370,8 +374,8 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t border-[#e5e5e5] bg-[#f5f0e8]">
-        <div className="max-w-7xl mx-auto px-8 py-16">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-12 mb-12">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 md:py-16">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-12 mb-8 md:mb-12">
             <div className="md:col-span-1">
               <h3 className="font-bold text-black mb-4 flex items-center gap-2">
                 <div className="w-5 h-5 bg-[#8b6f47] rounded flex items-center justify-center text-white text-xs font-bold">
@@ -442,7 +446,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="border-t border-[#e5e5e5] pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-700">
+          <div className="border-t border-[#e5e5e5] pt-6 md:pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs md:text-sm text-gray-700">
             <p>&copy; 2025 AdMiro. All rights reserved.</p>
             <div className="flex gap-6">
               <Link href="#" className="hover:text-black transition">

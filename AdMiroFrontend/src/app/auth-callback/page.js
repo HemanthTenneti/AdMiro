@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import gsap from "gsap";
 
-export default function AuthCallbackPage() {
+function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const containerRef = useRef(null);
@@ -78,5 +78,16 @@ export default function AuthCallbackPage() {
         <p className="text-gray-600">You will be redirected in a moment.</p>
       </div>
     </div>
+  );
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-[#faf9f7]" />
+      }>
+      <AuthCallbackContent />
+    </Suspense>
   );
 }

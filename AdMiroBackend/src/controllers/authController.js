@@ -43,19 +43,12 @@ const register = async (req, res) => {
       lastName || ""
     );
 
-    // Set refresh token in HTTP-only cookie
-    res.cookie("refreshToken", result.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-    });
-
     return res.status(201).json(
       formatSuccessResponse(
         {
           user: result.user,
           accessToken: result.accessToken,
+          refreshToken: result.refreshToken,
         },
         "User registered successfully"
       )
@@ -83,19 +76,12 @@ const login = async (req, res) => {
     // Login user
     const result = await AuthService.login(usernameOrEmail, password);
 
-    // Set refresh token in HTTP-only cookie
-    res.cookie("refreshToken", result.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-    });
-
     return res.status(200).json(
       formatSuccessResponse(
         {
           user: result.user,
           accessToken: result.accessToken,
+          refreshToken: result.refreshToken,
         },
         "Login successful"
       )

@@ -26,7 +26,6 @@ const displaySchema = new mongoose.Schema(
     assignedAdmin: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: [true, "Assigned admin is required"],
     },
     resolution: {
       width: {

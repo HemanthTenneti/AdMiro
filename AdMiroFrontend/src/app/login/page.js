@@ -4,11 +4,13 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import axiosInstance from "@/lib/axiosConfig";
+import { useAuthStore } from "@/context/authStore";
 import gsap from "gsap";
 import { Eye, EyeSlash } from "phosphor-react";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { setUser } = useAuthStore();
   const mainRef = useRef(null);
   const cardRef = useRef(null);
   const [isLogin, setIsLogin] = useState(true);
@@ -29,13 +31,12 @@ export default function LoginPage() {
   // Check if user is already logged in
   useEffect(() => {
     const checkAuth = () => {
-      const accessToken = localStorage.getItem("accessToken");
       const user = localStorage.getItem("user");
 
-      if (accessToken && user) {
-        // User is already logged in, redirect to test page
-        console.log("✅ User already logged in, redirecting to /test");
-        router.push("/test");
+      if (user) {
+        // User is already logged in (has cookie + user in storage)
+        console.log("✅ User already logged in, redirecting to /dashboard");
+        router.push("/dashboard");
       }
     };
 
@@ -99,21 +100,25 @@ export default function LoginPage() {
       console.log("✅ Login response:", response.data);
       console.log("👤 User data:", response.data.data.user);
 
-      // Store access token in localStorage
-      localStorage.setItem("accessToken", response.data.data.accessToken);
+      // Store user in localStorage and auth store
+      // Token is in cookie, but we also store it in localStorage as a fallback
       localStorage.setItem("user", JSON.stringify(response.data.data.user));
+      localStorage.setItem(
+        "accessToken",
+        response.data.data.accessToken || "cookie-based"
+      );
+      setUser(response.data.data.user);
 
       console.log(
         "💾 Stored in localStorage - User:",
         localStorage.getItem("user")
       );
       console.log(
-        "💾 Stored in localStorage - Token:",
-        localStorage.getItem("accessToken") ? "YES" : "NO"
+        "🍪 Access token is in HTTP-only cookie (with fallback header)"
       );
 
-      // Redirect to test page
-      router.push("/test");
+      // Redirect to dashboard
+      router.push("/dashboard");
     } catch (err) {
       console.error("❌ Login error:", err);
       setError(
@@ -149,21 +154,25 @@ export default function LoginPage() {
       console.log("✅ Register response:", response.data);
       console.log("👤 User data:", response.data.data.user);
 
-      // Store access token in localStorage
-      localStorage.setItem("accessToken", response.data.data.accessToken);
+      // Store user in localStorage and auth store
+      // Token is in cookie, but we also store it in localStorage as a fallback
       localStorage.setItem("user", JSON.stringify(response.data.data.user));
+      localStorage.setItem(
+        "accessToken",
+        response.data.data.accessToken || "cookie-based"
+      );
+      setUser(response.data.data.user);
 
       console.log(
         "💾 Stored in localStorage - User:",
         localStorage.getItem("user")
       );
       console.log(
-        "💾 Stored in localStorage - Token:",
-        localStorage.getItem("accessToken") ? "YES" : "NO"
+        "🍪 Access token is in HTTP-only cookie (with fallback header)"
       );
 
-      // Redirect to test page
-      router.push("/test");
+      // Redirect to dashboard
+      router.push("/dashboard");
     } catch (err) {
       console.error("❌ Register error:", err);
       setError(
