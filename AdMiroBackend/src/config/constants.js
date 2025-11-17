@@ -1,57 +1,47 @@
-module.exports = {
-  // User Roles
-  ROLES: {
-    ADMIN: "admin",
-    ADVERTISER: "advertiser",
-  },
+export const ROLES = {
+  ADMIN: "admin",
+  ADVERTISER: "advertiser",
+};
 
-  // Display Status
-  DISPLAY_STATUS: {
-    ACTIVE: "active",
-    INACTIVE: "inactive",
-    OFFLINE: "offline",
-    PENDING: "pending",
-  },
+export const DISPLAY_STATUS = {
+  ACTIVE: "active",
+  INACTIVE: "inactive",
+  OFFLINE: "offline",
+  PENDING: "pending",
+};
 
-  // Advertisement Status
-  AD_STATUS: {
-    ACTIVE: "active",
-    SCHEDULED: "scheduled",
-    EXPIRED: "expired",
-    ARCHIVED: "archived",
-  },
+export const AD_STATUS = {
+  ACTIVE: "active",
+  SCHEDULED: "scheduled",
+  EXPIRED: "expired",
+  ARCHIVED: "archived",
+};
 
-  // Connection Request Status
-  CONNECTION_REQUEST_STATUS: {
-    PENDING: "pending",
-    APPROVED: "approved",
-    REJECTED: "rejected",
-  },
+export const CONNECTION_REQUEST_STATUS = {
+  PENDING: "pending",
+  APPROVED: "approved",
+  REJECTED: "rejected",
+};
 
-  // Media Types
-  MEDIA_TYPES: {
-    IMAGE: "image",
-    VIDEO: "video",
-  },
+export const MEDIA_TYPES = {
+  IMAGE: "image",
+  VIDEO: "video",
+};
 
-  // Loop Rotation Types
-  ROTATION_TYPES: {
-    SEQUENTIAL: "sequential",
-    RANDOM: "random",
-    WEIGHTED: "weighted",
-  },
+export const ROTATION_TYPES = {
+  SEQUENTIAL: "sequential",
+  RANDOM: "random",
+  WEIGHTED: "weighted",
+};
 
-  // Pagination
-  DEFAULT_PAGE_SIZE: 10,
-  MAX_PAGE_SIZE: 100,
+export const DEFAULT_PAGE_SIZE = 10;
+export const MAX_PAGE_SIZE = 100;
 
-  // Response Messages
-  MESSAGES: {
-    SUCCESS: "Operation successful",
-    ERROR: "An error occurred",
-    UNAUTHORIZED: "Unauthorized access",
-    FORBIDDEN: "Forbidden",
-    NOT_FOUND: "Resource not found",
-    VALIDATION_ERROR: "Validation error",
-  },
+export const MESSAGES = {
+  SUCCESS: "Operation successful",
+  ERROR: "An error occurred",
+  UNAUTHORIZED: "Unauthorized access",
+  FORBIDDEN: "Forbidden",
+  NOT_FOUND: "Resource not found",
+  VALIDATION_ERROR: "Validation error",
 };

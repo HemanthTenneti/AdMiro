@@ -71,9 +71,9 @@ const generatePaginationMeta = (page, limit, total) => {
   };
 };
 
-module.exports = {
-  formatErrorResponse,
+export {
   formatSuccessResponse,
+  formatErrorResponse,
   calculatePagination,
   isValidMongoId,
   isEmail,

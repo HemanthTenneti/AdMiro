@@ -1,6 +1,6 @@
-const jwt = require("jsonwebtoken");
-const { formatErrorResponse } = require("../utils/helpers");
-const { ROLES } = require("../config/constants");
+import jwt from "jsonwebtoken";
+import { formatErrorResponse } from "../utils/helpers.js";
+import { ROLES } from "../config/constants.js";
 
 /**
  * Verify JWT token middleware - reads from Authorization header
@@ -58,8 +58,4 @@ const adminOnly = (req, res, next) => {
   return checkRole(ROLES.ADMIN)(req, res, next);
 };
 
-module.exports = {
-  verifyToken,
-  checkRole,
-  adminOnly,
-};
+export { verifyToken, checkRole, adminOnly };

@@ -1,4 +1,9 @@
-const express = require("express");
+import express from "express";
+import authRoutes from "./authRoutes.js";
+import googleAuthRoutes from "./googleAuthRoutes.js";
+import displaysRoutes from "./displaysRoutes.js";
+import advertisementsRoutes from "./advertisementsRoutes.js";
+import loopsRoutes from "./loopsRoutes.js";
 
 const router = express.Router();
 
@@ -16,17 +21,17 @@ router.get("/health", (req, res) => {
 });
 
 // Auth routes (traditional + Google OAuth)
-router.use("/auth", require("./authRoutes"));
-router.use("/auth", require("./googleAuthRoutes"));
+router.use("/auth", authRoutes);
+router.use("/auth", googleAuthRoutes);
 
 // Displays routes
-router.use("/displays", require("./displaysRoutes"));
+router.use("/displays", displaysRoutes);
 
 // Advertisements routes
-router.use("/ads", require("./advertisementsRoutes"));
+router.use("/ads", advertisementsRoutes);
 
 // Loops routes
-router.use("/loops", require("./loopsRoutes"));
+router.use("/loops", loopsRoutes);
 
 // Analytics routes (will be added in Phase 7)
 // router.use('/analytics', require('./analytics'));
@@ -34,4 +39,4 @@ router.use("/loops", require("./loopsRoutes"));
 // Users routes (will be added in Phase 10)
 // router.use('/users', require('./users'));
 
-module.exports = router;
+export default router;

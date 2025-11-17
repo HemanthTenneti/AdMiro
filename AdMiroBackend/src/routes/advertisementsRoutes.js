@@ -1,7 +1,6 @@
-const express = require("express");
-const router = express.Router();
-const { verifyToken } = require("../middleware/auth");
-const {
+import express from "express";
+import { verifyToken } from "../middleware/auth.js";
+import {
   createAdvertisement,
   getAdvertisements,
   getAdvertisementById,
@@ -9,7 +8,9 @@ const {
   deleteAdvertisement,
   updateAdvertisementStatus,
   getPublicAdvertisements,
-} = require("../controllers/advertisementsController");
+} from "../controllers/advertisementsController.js";
+
+const router = express.Router();
 
 /**
  * Advertisement Routes
@@ -37,4 +38,4 @@ router.put("/:id/status", verifyToken, updateAdvertisementStatus);
 // DELETE /api/ads/:id - Delete an advertisement
 router.delete("/:id", verifyToken, deleteAdvertisement);
 
-module.exports = router;
+export default router;

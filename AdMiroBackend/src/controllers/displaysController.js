@@ -1,9 +1,9 @@
-const Display = require("../models/Display");
-const { v4: uuidv4 } = require("uuid");
-const {
+import Display from "../models/Display.js";
+import { v4 as uuidv4 } from "uuid";
+import {
   formatSuccessResponse,
   formatErrorResponse,
-} = require("../utils/helpers");
+} from "../utils/helpers.js";
 
 /**
  * Create a new display
@@ -564,7 +564,7 @@ const loginDisplay = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
   createDisplay,
   getDisplays,
   getDisplayById,

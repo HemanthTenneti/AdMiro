@@ -1,8 +1,8 @@
-const AuthService = require("../services/authService");
-const {
+import AuthService from "../services/authService.js";
+import {
   formatSuccessResponse,
   formatErrorResponse,
-} = require("../utils/helpers");
+} from "../utils/helpers.js";
 
 /**
  * Register a new user
@@ -171,10 +171,4 @@ const getCurrentUser = async (req, res) => {
   }
 };
 
-module.exports = {
-  register,
-  login,
-  refreshAccessToken,
-  logout,
-  getCurrentUser,
-};
+export { register, login, refreshAccessToken, logout, getCurrentUser };

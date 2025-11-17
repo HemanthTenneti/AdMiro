@@ -1,11 +1,11 @@
-const DisplayLoop = require("../models/DisplayLoop");
-const Display = require("../models/Display");
-const Advertisement = require("../models/Advertisement");
-const { v4: uuidv4 } = require("uuid");
-const {
+import DisplayLoop from "../models/DisplayLoop.js";
+import Display from "../models/Display.js";
+import Advertisement from "../models/Advertisement.js";
+import { v4 as uuidv4 } from "uuid";
+import {
   formatSuccessResponse,
   formatErrorResponse,
-} = require("../utils/helpers");
+} from "../utils/helpers.js";
 
 /**
  * Create a new display loop
@@ -465,7 +465,7 @@ const reorderLoopAdvertisements = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
   createDisplayLoop,
   getLoopsByDisplay,
   getLoopById,

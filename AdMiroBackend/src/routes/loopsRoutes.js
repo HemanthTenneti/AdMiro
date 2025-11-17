@@ -1,14 +1,15 @@
-const express = require("express");
-const router = express.Router();
-const { verifyToken } = require("../middleware/auth");
-const {
+import express from "express";
+import { verifyToken } from "../middleware/auth.js";
+import {
   createDisplayLoop,
   getLoopsByDisplay,
   getLoopById,
   updateDisplayLoop,
   deleteDisplayLoop,
   reorderLoopAdvertisements,
-} = require("../controllers/displayLoopsController");
+} from "../controllers/displayLoopsController.js";
+
+const router = express.Router();
 
 /**
  * Display Loop Routes
@@ -33,4 +34,4 @@ router.put("/:id/reorder", verifyToken, reorderLoopAdvertisements);
 // DELETE /api/loops/:id - Delete a loop
 router.delete("/:id", verifyToken, deleteDisplayLoop);
 
-module.exports = router;
+export default router;

@@ -1,6 +1,5 @@
-const express = require("express");
-const router = express.Router();
-const {
+import express from "express";
+import {
   createDisplay,
   getDisplays,
   getDisplayById,
@@ -10,8 +9,10 @@ const {
   getDisplayByToken,
   reportDisplayStatus,
   loginDisplay,
-} = require("../controllers/displaysController");
-const { verifyToken } = require("../middleware/auth");
+} from "../controllers/displaysController.js";
+import { verifyToken } from "../middleware/auth.js";
+
+const router = express.Router();
 
 /**
  * POST /api/displays
@@ -81,4 +82,4 @@ router.put("/:id", verifyToken, updateDisplay);
  */
 router.delete("/:id", verifyToken, deleteDisplay);
 
-module.exports = router;
+export default router;

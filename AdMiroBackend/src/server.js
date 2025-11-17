@@ -1,15 +1,15 @@
-require("dotenv").config();
-const express = require("express");
-const helmet = require("helmet");
-const morgan = require("morgan");
-const session = require("express-session");
-const passport = require("./config/passport");
-const connectDB = require("./config/database");
-const corsMiddleware = require("./middleware/cors");
-const { apiLimiter } = require("./middleware/rateLimiter");
-const errorHandler = require("./middleware/errorHandler");
-const logRequest = require("./middleware/logger");
-const routes = require("./routes");
+import "dotenv/config.js";
+import express from "express";
+import helmet from "helmet";
+import morgan from "morgan";
+import session from "express-session";
+import passportConfig from "./config/passport.js";
+import connectDB from "./config/database.js";
+import corsMiddleware from "./middleware/cors.js";
+import { apiLimiter } from "./middleware/rateLimiter.js";
+import errorHandler from "./middleware/errorHandler.js";
+import logRequest from "./middleware/logger.js";
+import routes from "./routes/index.js";
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -45,8 +45,8 @@ app.use(
 );
 
 // Passport middleware
-app.use(passport.initialize());
-app.use(passport.session());
+app.use(passportConfig.initialize());
+app.use(passportConfig.session());
 
 // Body parsing (must come before rate limiting)
 app.use(express.json());
@@ -112,4 +112,4 @@ process.on("unhandledRejection", err => {
 
 startServer();
 
-module.exports = app;
+export default app;

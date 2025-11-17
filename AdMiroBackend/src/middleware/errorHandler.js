@@ -1,4 +1,4 @@
-const { formatErrorResponse } = require("../utils/helpers");
+import { formatErrorResponse } from "../utils/helpers.js";
 
 /**
  * Central error handling middleware
@@ -46,4 +46,4 @@ const errorHandler = (err, req, res, next) => {
   return res.status(statusCode).json(formatErrorResponse(message, err.message));
 };
 
-module.exports = errorHandler;
+export default errorHandler;

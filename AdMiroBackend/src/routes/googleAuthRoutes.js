@@ -1,11 +1,12 @@
-const express = require("express");
-const passport = require("passport");
-const router = express.Router();
-const AuthService = require("../services/authService");
-const {
+import express from "express";
+import passport from "passport";
+import AuthService from "../services/authService.js";
+import {
   formatSuccessResponse,
   formatErrorResponse,
-} = require("../utils/helpers");
+} from "../utils/helpers.js";
+
+const router = express.Router();
 
 /**
  * Google OAuth Login/Signup - Initiate
@@ -70,4 +71,4 @@ router.post("/logout", (req, res) => {
     .json(formatSuccessResponse({}, "Logged out successfully"));
 });
 
-module.exports = router;
+export default router;

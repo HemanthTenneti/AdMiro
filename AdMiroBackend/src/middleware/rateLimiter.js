@@ -1,4 +1,4 @@
-const rateLimit = require("express-rate-limit");
+import rateLimit from "express-rate-limit";
 
 // General API rate limiter
 const apiLimiter = rateLimit({
@@ -17,7 +17,4 @@ const authLimiter = rateLimit({
   skipSuccessfulRequests: true, // Don't count successful requests
 });
 
-module.exports = {
-  apiLimiter,
-  authLimiter,
-};
+export { apiLimiter };
