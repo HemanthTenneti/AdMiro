@@ -25,8 +25,8 @@ router.use("/displays", require("./displaysRoutes"));
 // Advertisements routes
 router.use("/ads", require("./advertisementsRoutes"));
 
-// Loops routes (will be added in Phase 6)
-// router.use('/loops', require('./loops'));
+// Loops routes
+router.use("/loops", require("./loopsRoutes"));
 
 // Analytics routes (will be added in Phase 7)
 // router.use('/analytics', require('./analytics'));
