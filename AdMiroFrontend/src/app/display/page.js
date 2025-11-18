@@ -4,7 +4,12 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import axiosInstance from "@/lib/axiosConfig";
-import { CircleNotch } from "phosphor-react";
+import {
+  CircleNotch,
+  DotsThreeVertical,
+  SignOut,
+  Repeat,
+} from "phosphor-react";
 
 export default function DisplayPage() {
   const router = useRouter();
@@ -25,6 +30,8 @@ export default function DisplayPage() {
   });
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef(null);
 
   // Report status to backend
   const reportDisplayStatus = useCallback(
@@ -210,6 +217,48 @@ export default function DisplayPage() {
     }
   };
 
+  // Handle logout
+  const handleLogout = () => {
+    localStorage.removeItem("connectionToken");
+    localStorage.removeItem("displayId");
+    localStorage.removeItem("displayMode");
+    setConnectionToken(null);
+    setDisplayId(null);
+    setAds([]);
+    setCurrentAd(null);
+    setLoginMode(true);
+    setShowMenu(false);
+    router.push("/login");
+  };
+
+  // Handle switch display
+  const handleSwitchDisplay = () => {
+    localStorage.removeItem("connectionToken");
+    localStorage.removeItem("displayId");
+    localStorage.removeItem("displayMode");
+    setConnectionToken(null);
+    setDisplayId(null);
+    setAds([]);
+    setCurrentAd(null);
+    setLoginMode(true);
+    setShowMenu(false);
+  };
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowMenu(false);
+      }
+    }
+
+    if (showMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [showMenu]);
+
   // Loading state
   if (loading) {
     return (
@@ -353,6 +402,44 @@ export default function DisplayPage() {
               }}
             />
           )}
+
+          {/* Menu Button (top left) */}
+          <div className="absolute top-4 left-4 z-50" ref={menuRef}>
+            <button
+              onClick={() => setShowMenu(!showMenu)}
+              className="p-3 bg-black bg-opacity-60 hover:bg-opacity-80 text-white rounded-lg transition"
+              title="Display options">
+              <DotsThreeVertical size={24} weight="bold" />
+            </button>
+
+            {/* Dropdown Menu */}
+            {showMenu && (
+              <div className="absolute top-14 left-0 bg-white rounded-lg shadow-xl overflow-hidden min-w-48 z-50">
+                <div className="p-4 border-b border-gray-200 bg-gray-50">
+                  <p className="text-sm font-semibold text-gray-700">
+                    Display ID
+                  </p>
+                  <p className="text-xs text-gray-600 font-mono break-all">
+                    {displayId}
+                  </p>
+                </div>
+
+                <button
+                  onClick={handleSwitchDisplay}
+                  className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-gray-100 text-gray-700 font-semibold transition border-b border-gray-100">
+                  <Repeat size={18} />
+                  Switch Display
+                </button>
+
+                <button
+                  onClick={handleLogout}
+                  className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-red-50 text-red-600 font-semibold transition">
+                  <SignOut size={18} />
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* Debug Info (bottom right, small) */}
           <div className="absolute bottom-4 right-4 bg-black bg-opacity-70 text-white text-xs p-2 rounded font-mono max-w-xs">

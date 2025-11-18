@@ -6,16 +6,27 @@ import Link from "next/link";
 import { toast } from "sonner";
 import axiosInstance from "@/lib/axiosConfig";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Plus, Trash, PencilSimple, CircleNotch } from "phosphor-react";
+import {
+  Plus,
+  Trash,
+  PencilSimple,
+  CircleNotch,
+  MagnifyingGlass,
+  X,
+} from "phosphor-react";
 import gsap from "gsap";
 
 export default function DisplaysPage() {
   const router = useRouter();
   const mainRef = useRef(null);
   const [displays, setDisplays] = useState([]);
+  const [allDisplays, setAllDisplays] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Check auth and fetch displays
   useEffect(() => {
@@ -48,7 +59,9 @@ export default function DisplaysPage() {
       const response = await axiosInstance.get("/api/displays");
       console.log("✅ Displays fetched:", response.data);
 
+      setAllDisplays(response.data.data.displays || []);
       setDisplays(response.data.data.displays || []);
+      setPage(1);
     } catch (err) {
       console.error("❌ Error fetching displays:", err);
       const errorMessage =
@@ -58,6 +71,7 @@ export default function DisplaysPage() {
       setError(errorMessage);
       toast.error(errorMessage);
       setDisplays([]);
+      setAllDisplays([]);
     } finally {
       setLoading(false);
     }
@@ -102,6 +116,63 @@ export default function DisplaysPage() {
     }
   };
 
+  // Smart search function
+  const performSearch = searchValue => {
+    setSearchTerm(searchValue);
+    setPage(1);
+
+    if (!searchValue.trim()) {
+      setDisplays(allDisplays);
+      return;
+    }
+
+    const lowercaseSearch = searchValue.toLowerCase();
+    const filtered = allDisplays.filter(display => {
+      // Search by Display ID
+      if (display.displayId?.toLowerCase().includes(lowercaseSearch))
+        return true;
+      // Search by Display Name
+      if (display.displayName?.toLowerCase().includes(lowercaseSearch))
+        return true;
+      // Search by Location
+      if (display.location?.toLowerCase().includes(lowercaseSearch))
+        return true;
+      // Search by Created By (First Name, Last Name, Username)
+      const createdBy = display.assignedAdmin?.firstName || "";
+      const lastName = display.assignedAdmin?.lastName || "";
+      const username = display.assignedAdmin?.username || "";
+      if (
+        createdBy.toLowerCase().includes(lowercaseSearch) ||
+        lastName.toLowerCase().includes(lowercaseSearch) ||
+        username.toLowerCase().includes(lowercaseSearch)
+      ) {
+        return true;
+      }
+      // Search by Resolution
+      if (
+        `${display.resolution.width}x${display.resolution.height}`
+          .toLowerCase()
+          .includes(lowercaseSearch)
+      ) {
+        return true;
+      }
+      // Search by Status
+      if (display.status?.toLowerCase().includes(lowercaseSearch)) return true;
+
+      return false;
+    });
+
+    setDisplays(filtered);
+  };
+
+  // Pagination logic
+  const totalPages = Math.ceil(displays.length / itemsPerPage);
+  const startIndex = (page - 1) * itemsPerPage;
+  const paginatedDisplays = displays.slice(
+    startIndex,
+    startIndex + itemsPerPage
+  );
+
   return (
     <DashboardLayout>
       <main
@@ -120,6 +191,37 @@ export default function DisplaysPage() {
               <Plus size={20} weight="bold" />
               Create Display
             </Link>
+          </div>
+
+          {/* Search Bar */}
+          <div className="mb-8">
+            <div className="relative">
+              <MagnifyingGlass
+                size={20}
+                className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"
+                weight="bold"
+              />
+              <input
+                type="text"
+                placeholder="Search by Display ID, Name, Location, Creator, Resolution, or Status..."
+                value={searchTerm}
+                onChange={e => performSearch(e.target.value)}
+                className="w-full pl-12 pr-10 py-3 border-2 border-[#e5e5e5] rounded-lg focus:outline-none focus:border-[#8b6f47] focus:ring-2 focus:ring-[#8b6f47] focus:ring-opacity-20"
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => performSearch("")}
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  <X size={20} weight="bold" />
+                </button>
+              )}
+            </div>
+            {searchTerm && (
+              <p className="mt-2 text-sm text-gray-600">
+                Found <strong>{displays.length}</strong> display
+                {displays.length !== 1 ? "s" : ""}
+              </p>
+            )}
           </div>
 
           {/* Error Alert */}
@@ -141,21 +243,24 @@ export default function DisplaysPage() {
                 <p className="text-gray-600">Loading your displays...</p>
               </div>
             </div>
-          ) : displays.length === 0 ? (
+          ) : paginatedDisplays.length === 0 ? (
             // Empty State
             <div className="bg-white rounded-2xl border-2 border-[#e5e5e5] p-12 text-center">
               <h2 className="text-2xl font-bold text-black mb-2">
-                No displays yet
+                {searchTerm ? "No displays found" : "No displays yet"}
               </h2>
               <p className="text-gray-600 mb-8">
-                Create your first display to get started managing your digital
-                signage.
+                {searchTerm
+                  ? "Try adjusting your search terms"
+                  : "Create your first display to get started managing your digital signage."}
               </p>
-              <Link
-                href="/dashboard/displays/new"
-                className="inline-block px-8 py-3 bg-[#8b6f47] hover:bg-[#7a5f3a] text-white font-semibold rounded-lg transition">
-                Create Display
-              </Link>
+              {!searchTerm && (
+                <Link
+                  href="/dashboard/displays/new"
+                  className="inline-block px-8 py-3 bg-[#8b6f47] hover:bg-[#7a5f3a] text-white font-semibold rounded-lg transition">
+                  Create Display
+                </Link>
+              )}
             </div>
           ) : (
             // Displays Table
@@ -188,7 +293,7 @@ export default function DisplaysPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {displays.map((display, index) => (
+                    {paginatedDisplays.map((display, index) => (
                       <tr
                         key={display._id}
                         className="border-b border-[#e5e5e5] hover:bg-[#faf9f7] transition">
@@ -269,11 +374,54 @@ export default function DisplaysPage() {
 
           {/* Displays Count */}
           {displays.length > 0 && (
-            <div className="mt-6 text-center text-gray-600">
-              <p>
-                Showing <strong>{displays.length}</strong> display
-                {displays.length !== 1 ? "s" : ""}
-              </p>
+            <div className="mt-8">
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-4 mb-6">
+                  <button
+                    onClick={() => setPage(Math.max(1, page - 1))}
+                    disabled={page === 1}
+                    className="px-4 py-2 bg-[#8b6f47] hover:bg-[#7a5f3a] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition">
+                    Previous
+                  </button>
+                  <div className="flex items-center gap-2">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                      pageNum => (
+                        <button
+                          key={pageNum}
+                          onClick={() => setPage(pageNum)}
+                          className={`px-3 py-2 rounded-lg font-semibold transition ${
+                            page === pageNum
+                              ? "bg-[#8b6f47] text-white"
+                              : "bg-[#f0ede9] text-black hover:bg-[#e5e0d9]"
+                          }`}>
+                          {pageNum}
+                        </button>
+                      )
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setPage(Math.min(totalPages, page + 1))}
+                    disabled={page === totalPages}
+                    className="px-4 py-2 bg-[#8b6f47] hover:bg-[#7a5f3a] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition">
+                    Next
+                  </button>
+                </div>
+              )}
+
+              {/* Count Summary */}
+              <div className="text-center text-gray-600">
+                <p>
+                  Showing{" "}
+                  <strong>
+                    {startIndex + 1}-
+                    {Math.min(startIndex + itemsPerPage, displays.length)}
+                  </strong>{" "}
+                  of <strong>{displays.length}</strong> display
+                  {displays.length !== 1 ? "s" : ""}
+                  {searchTerm && ` (searched)`}
+                </p>
+              </div>
             </div>
           )}
         </div>

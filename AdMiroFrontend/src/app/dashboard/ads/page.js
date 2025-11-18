@@ -6,13 +6,21 @@ import Link from "next/link";
 import { toast } from "sonner";
 import axiosInstance from "@/lib/axiosConfig";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Plus, Trash, PencilSimple, CircleNotch } from "phosphor-react";
+import {
+  Plus,
+  Trash,
+  PencilSimple,
+  CircleNotch,
+  MagnifyingGlass,
+  X,
+} from "phosphor-react";
 import gsap from "gsap";
 
 export default function AdvertisementsPage() {
   const router = useRouter();
   const mainRef = useRef(null);
   const [advertisements, setAdvertisements] = useState([]);
+  const [allAdvertisements, setAllAdvertisements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(null);
@@ -24,6 +32,7 @@ export default function AdvertisementsPage() {
   const [order, setOrder] = useState("desc");
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({});
+  const itemsPerPage = 9;
 
   // Check auth and fetch advertisements
   useEffect(() => {
@@ -61,7 +70,7 @@ export default function AdvertisementsPage() {
 
       const params = new URLSearchParams({
         page: pageNum,
-        limit: 10,
+        limit: 1000, // Fetch all ads for client-side filtering
         sortBy,
         order,
       });
@@ -73,9 +82,10 @@ export default function AdvertisementsPage() {
       const response = await axiosInstance.get(`/api/ads?${params}`);
       console.log("✅ Advertisements fetched:", response.data);
 
-      setAdvertisements(response.data.data.advertisements || []);
-      setPagination(response.data.data.pagination || {});
-      setPage(pageNum);
+      const ads = response.data.data.advertisements || [];
+      setAllAdvertisements(ads);
+      setAdvertisements(ads);
+      setPage(1);
     } catch (err) {
       console.error("❌ Error fetching advertisements:", err);
       const errorMessage =
@@ -85,6 +95,7 @@ export default function AdvertisementsPage() {
       setError(errorMessage);
       toast.error(errorMessage);
       setAdvertisements([]);
+      setAllAdvertisements([]);
     } finally {
       setLoading(false);
     }
@@ -137,6 +148,47 @@ export default function AdvertisementsPage() {
     return mediaType === "video" ? "🎬" : "🖼️";
   };
 
+  // Smart search function
+  const performSearch = searchValue => {
+    setSearchTerm(searchValue);
+    setPage(1);
+
+    if (!searchValue.trim()) {
+      setAdvertisements(allAdvertisements);
+      return;
+    }
+
+    const lowercaseSearch = searchValue.toLowerCase();
+    const filtered = allAdvertisements.filter(ad => {
+      // Search by Ad Name
+      if (ad.adName?.toLowerCase().includes(lowercaseSearch)) return true;
+      // Search by Duration
+      if (ad.duration?.toString().includes(lowercaseSearch)) return true;
+      // Search by Status
+      if (ad.status?.toLowerCase().includes(lowercaseSearch)) return true;
+      // Search by Media Type
+      if (ad.mediaType?.toLowerCase().includes(lowercaseSearch)) return true;
+      // Search by Description (if available)
+      if (ad.description?.toLowerCase().includes(lowercaseSearch)) return true;
+      // Search by Views count
+      if (ad.views?.toString().includes(lowercaseSearch)) return true;
+      // Search by Clicks count
+      if (ad.clicks?.toString().includes(lowercaseSearch)) return true;
+
+      return false;
+    });
+
+    setAdvertisements(filtered);
+  };
+
+  // Pagination logic
+  const totalPages = Math.ceil(advertisements.length / itemsPerPage);
+  const startIndex = (page - 1) * itemsPerPage;
+  const paginatedAds = advertisements.slice(
+    startIndex,
+    startIndex + itemsPerPage
+  );
+
   return (
     <DashboardLayout>
       <main
@@ -163,6 +215,37 @@ export default function AdvertisementsPage() {
 
           {/* Filters Bar */}
           <div className="bg-white rounded-2xl border-2 border-[#e5e5e5] p-6 mb-8">
+            {/* Search Bar */}
+            <div className="mb-6">
+              <div className="relative">
+                <MagnifyingGlass
+                  size={20}
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  weight="bold"
+                />
+                <input
+                  type="text"
+                  placeholder="Search by Ad Name, Status, Type, Duration, Views, Clicks..."
+                  value={searchTerm}
+                  onChange={e => performSearch(e.target.value)}
+                  className="w-full pl-12 pr-10 py-3 border-2 border-[#e5e5e5] rounded-lg focus:outline-none focus:border-[#8b6f47] focus:ring-2 focus:ring-[#8b6f47] focus:ring-opacity-20"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => performSearch("")}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                    <X size={20} weight="bold" />
+                  </button>
+                )}
+              </div>
+              {searchTerm && (
+                <p className="mt-2 text-sm text-gray-600">
+                  Found <strong>{advertisements.length}</strong> advertisement
+                  {advertisements.length !== 1 ? "s" : ""}
+                </p>
+              )}
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Status Filter */}
               <div>
@@ -237,22 +320,27 @@ export default function AdvertisementsPage() {
             // Empty State
             <div className="bg-white rounded-2xl border-2 border-[#e5e5e5] p-12 text-center">
               <h2 className="text-2xl font-bold text-black mb-2">
-                No advertisements yet
+                {searchTerm
+                  ? "No advertisements found"
+                  : "No advertisements yet"}
               </h2>
               <p className="text-gray-600 mb-8">
-                Create your first advertisement to start managing your
-                campaigns.
+                {searchTerm
+                  ? "Try adjusting your search terms"
+                  : "Create your first advertisement to start managing your campaigns."}
               </p>
-              <Link
-                href="/dashboard/ads/new"
-                className="inline-block px-8 py-3 bg-[#8b6f47] hover:bg-[#7a5f3a] text-white font-semibold rounded-lg transition">
-                Create Advertisement
-              </Link>
+              {!searchTerm && (
+                <Link
+                  href="/dashboard/ads/new"
+                  className="inline-block px-8 py-3 bg-[#8b6f47] hover:bg-[#7a5f3a] text-white font-semibold rounded-lg transition">
+                  Create Advertisement
+                </Link>
+              )}
             </div>
           ) : (
             // Advertisements Grid
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              {advertisements.map(ad => (
+              {paginatedAds.map(ad => (
                 <div
                   key={ad._id}
                   className="bg-white rounded-2xl border-2 border-[#e5e5e5] overflow-hidden hover:shadow-lg transition">
@@ -353,23 +441,34 @@ export default function AdvertisementsPage() {
           )}
 
           {/* Pagination */}
-          {pagination.totalPages > 1 && (
-            <div className="flex items-center justify-center gap-4 mt-8">
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-4 mb-6 mt-8">
               <button
-                onClick={() => fetchAdvertisements(Math.max(1, page - 1))}
+                onClick={() => setPage(Math.max(1, page - 1))}
                 disabled={page === 1}
-                className="px-4 py-2 bg-[#8b6f47] hover:bg-[#7a5f3a] disabled:opacity-50 text-white font-semibold rounded-lg transition">
+                className="px-4 py-2 bg-[#8b6f47] hover:bg-[#7a5f3a] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition">
                 Previous
               </button>
-              <span className="text-gray-700">
-                Page {page} of {pagination.totalPages}
-              </span>
+              <div className="flex items-center gap-2">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  pageNum => (
+                    <button
+                      key={pageNum}
+                      onClick={() => setPage(pageNum)}
+                      className={`px-3 py-2 rounded-lg font-semibold transition ${
+                        page === pageNum
+                          ? "bg-[#8b6f47] text-white"
+                          : "bg-[#f0ede9] text-black hover:bg-[#e5e0d9]"
+                      }`}>
+                      {pageNum}
+                    </button>
+                  )
+                )}
+              </div>
               <button
-                onClick={() =>
-                  fetchAdvertisements(Math.min(pagination.totalPages, page + 1))
-                }
-                disabled={page === pagination.totalPages}
-                className="px-4 py-2 bg-[#8b6f47] hover:bg-[#7a5f3a] disabled:opacity-50 text-white font-semibold rounded-lg transition">
+                onClick={() => setPage(Math.min(totalPages, page + 1))}
+                disabled={page === totalPages}
+                className="px-4 py-2 bg-[#8b6f47] hover:bg-[#7a5f3a] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition">
                 Next
               </button>
             </div>
@@ -377,11 +476,16 @@ export default function AdvertisementsPage() {
 
           {/* Count Summary */}
           {advertisements.length > 0 && (
-            <div className="mt-6 text-center text-gray-600">
+            <div className="text-center text-gray-600">
               <p>
-                Showing <strong>{advertisements.length}</strong> advertisement
-                {advertisements.length !== 1 ? "s" : ""} (Total:{" "}
-                <strong>{pagination.total}</strong>)
+                Showing{" "}
+                <strong>
+                  {startIndex + 1}-
+                  {Math.min(startIndex + itemsPerPage, advertisements.length)}
+                </strong>{" "}
+                of <strong>{advertisements.length}</strong> advertisement
+                {advertisements.length !== 1 ? "s" : ""}
+                {searchTerm && ` (searched)`}
               </p>
             </div>
           )}

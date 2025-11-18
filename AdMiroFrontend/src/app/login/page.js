@@ -498,12 +498,19 @@ export default function LoginPage() {
                     <span className="px-2 bg-white text-gray-600">or</span>
                   </div>
                 </div>
-                <Link
-                  href="/display-register"
-                  className="w-full inline-block px-6 py-2 border-2 border-[#8b6f47] hover:bg-[#8b6f47] hover:text-white text-[#8b6f47] font-semibold rounded-lg transition text-center">
-                  📺 Use as Display
-                </Link>
-                <p className="text-xs text-gray-500 mt-2">
+                <div className="space-y-2">
+                  <Link
+                    href="/display-register"
+                    className="w-full block px-6 py-2 border-2 border-[#8b6f47] hover:bg-[#8b6f47] hover:text-white text-[#8b6f47] font-semibold rounded-lg transition text-center">
+                    📺 Register Display
+                  </Link>
+                  <Link
+                    href="/display-login"
+                    className="w-full block px-6 py-2 border-2 border-blue-500 hover:bg-blue-500 hover:text-white text-blue-500 font-semibold rounded-lg transition text-center">
+                    🔌 Login to Display
+                  </Link>
+                </div>
+                <p className="text-xs text-gray-500 mt-2 text-center">
                   Turn this device into an ad display
                 </p>
               </div>
