@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import axiosInstance from "@/lib/axiosConfig";
-import { CircleNotch, Check, ArrowLeft } from "phosphor-react";
+import { CircleNotch, Check, ArrowLeft, Clock } from "phosphor-react";
 import gsap from "gsap";
 
 export default function DisplayRegisterPage() {
@@ -13,6 +13,10 @@ export default function DisplayRegisterPage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const [mounted, setMounted] = useState(false);
+  const [waitingForApproval, setWaitingForApproval] = useState(false);
+  const [displayId, setDisplayId] = useState("");
+  const [connectionToken, setConnectionToken] = useState("");
+  const [rejectionReason, setRejectionReason] = useState("");
 
   const [formData, setFormData] = useState({
     displayName: "",
@@ -24,6 +28,57 @@ export default function DisplayRegisterPage() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Poll for approval when waiting
+  useEffect(() => {
+    if (!waitingForApproval || !displayId) return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await axiosInstance.get(
+          `/api/displays/by-token/${connectionToken}`
+        );
+        const displayData = response.data.data;
+        const displayStatus = displayData.status;
+        const requestStatus = displayData.connectionRequestStatus;
+        const reason = displayData.rejectionReason;
+
+        // Check if display has been rejected
+        if (requestStatus === "rejected") {
+          console.log("❌ Display request rejected!");
+          setWaitingForApproval(false);
+          setRejectionReason(reason || "No reason provided");
+          setError(
+            `Your display registration was rejected${
+              reason ? `: ${reason}` : ""
+            }. Please contact your administrator.`
+          );
+          return;
+        }
+
+        // Check if display has been assigned to an admin (approved)
+        if (requestStatus === "approved" && displayData.assignedAdmin) {
+          console.log("✅ Display approved!");
+          setSuccess(true);
+          setWaitingForApproval(false);
+
+          // Store in localStorage
+          localStorage.setItem("displayId", displayId);
+          localStorage.setItem("connectionToken", connectionToken);
+          localStorage.setItem("displayMode", "true");
+
+          // Redirect to display page
+          setTimeout(() => {
+            router.push("/display");
+          }, 2000);
+        }
+      } catch (err) {
+        console.log("Still waiting for approval...");
+      }
+    }, 3000); // Poll every 3 seconds
+
+    return () => clearInterval(pollInterval);
+  }, [waitingForApproval, displayId, connectionToken, router]);
 
   useEffect(() => {
     if (mainRef.current && mounted) {
@@ -109,19 +164,31 @@ export default function DisplayRegisterPage() {
 
       console.log("✅ Display registered:", response.data);
 
-      const { displayId, connectionToken } = response.data.data;
+      const {
+        displayId: newDisplayId,
+        connectionToken: newToken,
+        status,
+        isPendingApproval,
+      } = response.data.data;
 
-      // Store in localStorage for the display to use
-      localStorage.setItem("displayId", displayId);
-      localStorage.setItem("connectionToken", connectionToken);
-      localStorage.setItem("displayMode", "true");
+      setDisplayId(newDisplayId);
+      setConnectionToken(newToken);
 
-      setSuccess(true);
+      // If pending approval, show waiting screen
+      if (isPendingApproval) {
+        setWaitingForApproval(true);
+      } else {
+        // Otherwise proceed normally
+        localStorage.setItem("displayId", newDisplayId);
+        localStorage.setItem("connectionToken", newToken);
+        localStorage.setItem("displayMode", "true");
 
-      // Redirect to display page after 2 seconds
-      setTimeout(() => {
-        router.push("/display");
-      }, 2000);
+        setSuccess(true);
+
+        setTimeout(() => {
+          router.push("/display");
+        }, 2000);
+      }
     } catch (err) {
       console.error("❌ Error registering display:", err);
       const errorMessage =
@@ -136,6 +203,100 @@ export default function DisplayRegisterPage() {
 
   if (!mounted) {
     return null;
+  }
+
+  // Show waiting for approval screen
+  if (waitingForApproval) {
+    return (
+      <main className="min-h-screen bg-linear-to-br from-[#faf9f7] to-[#f5f3f0] flex items-center justify-center p-4">
+        <div className="max-w-md w-full">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-blue-500 rounded-full mx-auto mb-4 flex items-center justify-center">
+              <Clock
+                size={32}
+                weight="bold"
+                className="text-white animate-spin"
+              />
+            </div>
+            <h1 className="text-3xl font-bold text-black mb-2">
+              Waiting for Approval
+            </h1>
+            <p className="text-gray-600 mb-6">
+              Your display is registered. An admin needs to approve it.
+            </p>
+
+            <div className="bg-white rounded-2xl border-2 border-[#e5e5e5] p-6 mb-6">
+              <div className="text-left space-y-3">
+                <div>
+                  <p className="text-xs text-gray-500 uppercase font-semibold mb-1">
+                    Display Name
+                  </p>
+                  <p className="text-lg font-semibold text-black">
+                    {formData.displayName}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase font-semibold mb-1">
+                    Location
+                  </p>
+                  <p className="text-lg font-semibold text-black">
+                    {formData.location}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase font-semibold mb-1">
+                    Display ID
+                  </p>
+                  <p className="font-mono text-sm text-[#8b6f47] break-all">
+                    {displayId}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-blue-50 rounded-2xl border border-blue-200 p-6">
+              <h3 className="font-semibold text-blue-900 mb-3">
+                📋 What to do:
+              </h3>
+              <ol className="space-y-2 text-sm text-blue-800 text-left">
+                <li>1. Log in to the admin dashboard</li>
+                <li>2. Go to &quot;Connection Requests&quot; page</li>
+                <li>3. Find your display and click &quot;Approve&quot;</li>
+                <li>4. This display will automatically start showing ads</li>
+              </ol>
+            </div>
+
+            <p className="text-xs text-gray-500 mt-6">
+              Still waiting... (checks every 3 seconds)
+            </p>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // Show success screen
+  if (success) {
+    return (
+      <main className="min-h-screen bg-linear-to-br from-[#faf9f7] to-[#f5f3f0] flex items-center justify-center p-4">
+        <div className="max-w-md w-full">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-green-500 rounded-full mx-auto mb-4 flex items-center justify-center">
+              <Check size={32} weight="bold" className="text-white" />
+            </div>
+            <h1 className="text-3xl font-bold text-black mb-2">Approved!</h1>
+            <p className="text-gray-600 mb-6">
+              Your display has been approved. Entering display mode...
+            </p>
+
+            <div className="flex items-center justify-center gap-2 text-[#8b6f47]">
+              <CircleNotch size={20} className="animate-spin" weight="bold" />
+              <span>Redirecting...</span>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
   }
 
   return (
@@ -163,21 +324,6 @@ export default function DisplayRegisterPage() {
             Set up this device to display advertisements
           </p>
         </div>
-
-        {/* Success Alert */}
-        {success && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
-            <Check size={24} className="text-green-600" weight="bold" />
-            <div>
-              <p className="font-semibold text-green-900">
-                Registration Success!
-              </p>
-              <p className="text-sm text-green-700">
-                Redirecting to display mode...
-              </p>
-            </div>
-          </div>
-        )}
 
         {/* Error Alert */}
         {error && (
@@ -267,9 +413,9 @@ export default function DisplayRegisterPage() {
             💡 What happens next?
           </h3>
           <ul className="space-y-2 text-sm text-blue-800">
-            <li>✅ Your device will be registered as a display</li>
-            <li>✅ It will enter full-screen ad display mode</li>
-            <li>✅ An admin can assign advertisements to this display</li>
+            <li>✅ Your device will be registered</li>
+            <li>✅ An admin will receive a connection request</li>
+            <li>✅ Once approved, this device will enter display mode</li>
             <li>✅ Ads will rotate automatically in full-screen</li>
             <li>ℹ️ You can exit by pressing ESC key</li>
           </ul>

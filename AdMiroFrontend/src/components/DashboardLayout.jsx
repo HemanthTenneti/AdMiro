@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -20,26 +20,27 @@ import {
 export default function DashboardLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [userInfo, setUserInfo] = useState(() => {
-    // Only runs on client during hydration
-    if (typeof window !== "undefined") {
-      try {
-        const userStr = localStorage.getItem("user");
-        if (userStr) {
-          const user = JSON.parse(userStr);
-          if (user.firstName && user.lastName) {
-            return {
-              name: `${user.firstName} ${user.lastName}`,
-              initial: user.firstName.charAt(0).toUpperCase(),
-            };
-          }
+  const [userInfo, setUserInfo] = useState({ name: "User", initial: "U" });
+  const [mounted, setMounted] = useState(false);
+
+  // Load user info after hydration
+  useEffect(() => {
+    try {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        if (user.firstName && user.lastName) {
+          setUserInfo({
+            name: `${user.firstName} ${user.lastName}`,
+            initial: user.firstName.charAt(0).toUpperCase(),
+          });
         }
-      } catch (err) {
-        console.error("Error parsing user:", err);
       }
+    } catch (err) {
+      console.error("Error parsing user:", err);
     }
-    return { name: "User", initial: "U" };
-  });
+    setMounted(true);
+  }, []);
 
   const router = useRouter();
 

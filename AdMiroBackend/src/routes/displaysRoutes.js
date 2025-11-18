@@ -9,10 +9,47 @@ import {
   getDisplayByToken,
   reportDisplayStatus,
   loginDisplay,
+  assignDisplayAdmin,
+  getAllConnectionRequests,
+  approveConnectionRequest,
+  rejectConnectionRequest,
 } from "../controllers/displaysController.js";
 import { verifyToken } from "../middleware/auth.js";
 
 const router = express.Router();
+
+/**
+ * GET /api/displays/connection-requests/all
+ * Get all connection requests
+ * Auth: Required
+ * Query: { page?, limit?, status? }
+ */
+router.get("/connection-requests/all", verifyToken, getAllConnectionRequests);
+
+/**
+ * POST /api/displays/connection-requests/:requestId/approve
+ * Approve a connection request
+ * Auth: Required
+ * Params: { requestId }
+ */
+router.post(
+  "/connection-requests/:requestId/approve",
+  verifyToken,
+  approveConnectionRequest
+);
+
+/**
+ * POST /api/displays/connection-requests/:requestId/reject
+ * Reject a connection request
+ * Auth: Required
+ * Params: { requestId }
+ * Body: { rejectionReason? }
+ */
+router.post(
+  "/connection-requests/:requestId/reject",
+  verifyToken,
+  rejectConnectionRequest
+);
 
 /**
  * POST /api/displays
@@ -74,6 +111,14 @@ router.post("/report-status", reportDisplayStatus);
  * Body: { displayName?, location?, status?, resolution?, configuration? }
  */
 router.put("/:id", verifyToken, updateDisplay);
+
+/**
+ * PUT /api/displays/:id/assign-admin
+ * Assign an admin to a pending display (approve and assign)
+ * Auth: Required (admin assigns themselves)
+ * Body: { }
+ */
+router.put("/:id/assign-admin", verifyToken, assignDisplayAdmin);
 
 /**
  * DELETE /api/displays/:id

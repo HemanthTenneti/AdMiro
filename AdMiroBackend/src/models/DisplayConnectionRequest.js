@@ -12,36 +12,17 @@ const displayConnectionRequestSchema = new mongoose.Schema(
       ref: "Display",
       required: [true, "Display ID is required"],
     },
-    displayInfo: {
-      deviceModel: {
-        type: String,
-        required: true,
-      },
-      serialNumber: {
-        type: String,
-        required: true,
-      },
-      firmwareVersion: {
-        type: String,
-        default: "unknown",
-      },
-      ipAddress: {
-        type: String,
-        required: true,
-      },
-      macAddress: {
-        type: String,
-        required: true,
-        unique: true,
-      },
-      androidVersion: {
-        type: String,
-        required: true,
-      },
-      requestedByEmail: {
-        type: String,
-        required: true,
-      },
+    displayName: {
+      type: String,
+      default: null,
+    },
+    displayLocation: {
+      type: String,
+      default: null,
+    },
+    firmwareVersion: {
+      type: String,
+      default: "unknown",
     },
     status: {
       type: String,

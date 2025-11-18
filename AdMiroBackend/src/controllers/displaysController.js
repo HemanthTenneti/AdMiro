@@ -1,4 +1,5 @@
 import Display from "../models/Display.js";
+import DisplayConnectionRequest from "../models/DisplayConnectionRequest.js";
 import { v4 as uuidv4 } from "uuid";
 import {
   formatSuccessResponse,
@@ -478,21 +479,71 @@ const registerDisplayDevice = async (req, res) => {
     // Generate connection token
     const connectionToken = uuidv4();
 
-    // Create display record
+    // Create display record without assigned admin (null initially)
+    // Device will wait for admin approval before being fully activated
     const newDisplay = new Display({
       displayId,
       displayName,
       location,
-      status: "offline",
-      assignedAdmin: req.user.userId, // Assign logged-in user as admin
+      status: "offline", // Offline until admin approves and activates
+      assignedAdmin: null, // No admin until approval
       resolution: resolution || { width: 1920, height: 1080 },
       connectionToken,
-      isConnected: true,
+      isConnected: false,
       firmwareVersion: browserInfo?.browserVersion || "Web",
     });
 
     await newDisplay.save();
-    console.log("✅ Display registered:", displayId);
+
+    // Create a connection request for the device
+    // Use fully random UUID to ensure uniqueness
+    const requestId = `REQ-${uuidv4()}`;
+    const connectionRequest = new DisplayConnectionRequest({
+      requestId,
+      displayId: newDisplay._id,
+      displayName,
+      displayLocation: location,
+      firmwareVersion: browserInfo?.browserVersion || "Web",
+      status: "pending",
+      requestedAt: new Date(),
+    });
+
+    try {
+      await connectionRequest.save();
+    } catch (connReqError) {
+      console.error("❌ Connection request save error:", connReqError.message);
+      console.error("Error code:", connReqError.code);
+      console.error("Error keyPattern:", connReqError.keyPattern);
+
+      // If connection request creation fails due to old index, try to update existing pending request
+      if (
+        connReqError.code === 11000 &&
+        connReqError.message.includes("displayInfo")
+      ) {
+        console.log(
+          "⚠️ Connection request creation failed (old index), attempting recovery..."
+        );
+
+        // Try to find and update an existing pending request for this display
+        const existingRequest = await DisplayConnectionRequest.findOne({
+          displayId: newDisplay._id,
+          status: "pending",
+        });
+
+        if (!existingRequest) {
+          throw connReqError; // Re-throw if no existing request to update
+        }
+
+        console.log(
+          "✅ Reusing existing connection request:",
+          existingRequest.requestId
+        );
+      } else {
+        throw connReqError;
+      }
+    }
+
+    console.log("✅ Display registered (pending approval):", displayId);
 
     return res.status(201).json(
       formatSuccessResponse(
@@ -501,13 +552,49 @@ const registerDisplayDevice = async (req, res) => {
           connectionToken,
           displayName,
           location,
+          status: "offline",
+          isPendingApproval: true,
         },
-        "Display registered successfully. Device ready to display advertisements."
+        "Display registered successfully. Waiting for admin approval..."
       )
     );
   } catch (error) {
     console.error("❌ Display registration error:", error.message);
-    return res.status(500).json(formatErrorResponse(error.message));
+    console.error("Error code:", error.code);
+    console.error("Error details:", error.keyPattern || error.keyValue);
+
+    // Handle specific error cases with user-friendly messages
+    let userMessage = "An error occurred while registering the display.";
+    let statusCode = 500;
+
+    // Handle duplicate key errors (E11000)
+    if (error.code === 11000) {
+      const duplicateField = Object.keys(error.keyPattern || {})[0];
+      console.error("Duplicate field:", duplicateField);
+
+      if (duplicateField === "connectionToken") {
+        userMessage =
+          "A system error occurred. Please try refreshing and registering again.";
+      } else if (duplicateField === "displayId") {
+        userMessage =
+          "This display ID already exists. Please try registering again.";
+      } else if (duplicateField === "requestId") {
+        userMessage = "Please try registering again - a system error occurred.";
+      } else {
+        userMessage = `A registration error occurred (${duplicateField}). Please try again or contact support.`;
+      }
+      statusCode = 409; // Conflict
+    }
+    // Handle validation errors
+    else if (error.name === "ValidationError") {
+      const messages = Object.values(error.errors)
+        .map(err => err.message)
+        .join(", ");
+      userMessage = messages || "Please check your input and try again.";
+      statusCode = 400;
+    }
+
+    return res.status(statusCode).json(formatErrorResponse(userMessage));
   }
 };
 
@@ -519,7 +606,7 @@ const registerDisplayDevice = async (req, res) => {
  */
 const getDisplayByToken = async (req, res) => {
   try {
-    const { token } = req.query;
+    const { token } = req.params;
 
     if (!token) {
       return res
@@ -533,6 +620,11 @@ const getDisplayByToken = async (req, res) => {
       return res.status(404).json(formatErrorResponse("Display not found."));
     }
 
+    // Get the connection request for this display to check approval status
+    const connectionRequest = await DisplayConnectionRequest.findOne({
+      displayId: display._id,
+    });
+
     console.log("✅ Display fetched by token:", display.displayId);
 
     return res.status(200).json(
@@ -545,6 +637,9 @@ const getDisplayByToken = async (req, res) => {
         configuration: display.configuration,
         currentLoop: display.currentLoop,
         isConnected: display.isConnected,
+        assignedAdmin: display.assignedAdmin, // Include to check if approved
+        connectionRequestStatus: connectionRequest?.status || "pending",
+        rejectionReason: connectionRequest?.rejectionReason || null,
       })
     );
   } catch (error) {
@@ -647,6 +742,301 @@ const loginDisplay = async (req, res) => {
   }
 };
 
+/**
+ * Assign an admin to a pending display (approve connection request)
+ * Params: { id } - display ID
+ * Body: { }
+ * Returns: { display, message }
+ * Auth: Required (admin assigns themselves)
+ */
+const assignDisplayAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const adminId = req.user.userId;
+
+    // Find the display
+    const display = await Display.findById(id);
+    if (!display) {
+      return res.status(404).json(formatErrorResponse("Display not found."));
+    }
+
+    // Check if already assigned
+    if (display.assignedAdmin && display.assignedAdmin !== null) {
+      return res
+        .status(400)
+        .json(formatErrorResponse("Display is already assigned to an admin."));
+    }
+
+    // Assign the admin
+    display.assignedAdmin = adminId;
+    display.status = "offline"; // Change from pending_approval to offline
+    display.isConnected = false;
+    await display.save();
+
+    // Update corresponding connection request
+    await DisplayConnectionRequest.updateOne(
+      { displayId: id },
+      { status: "approved", respondedAt: new Date() }
+    );
+
+    // Log the action
+    await loggingService.createLog({
+      action: "approve",
+      entityType: "display",
+      entityId: display._id,
+      userId: adminId,
+      details: {
+        description: `Display approved and assigned to admin: ${display.displayName}`,
+        metadata: {
+          displayId: display.displayId,
+          displayName: display.displayName,
+          location: display.location,
+        },
+      },
+      ipAddress: req.ip,
+      userAgent: req.get("user-agent"),
+    });
+
+    console.log(`✅ Display ${id} assigned to admin ${adminId}`);
+
+    return res
+      .status(200)
+      .json(
+        formatSuccessResponse(display, "Display approved and assigned to you.")
+      );
+  } catch (error) {
+    console.error("❌ Assign display admin error:", error.message);
+    return res.status(500).json(formatErrorResponse(error.message));
+  }
+};
+
+/**
+ * Get all connection requests for the current admin
+ * Query: { page?, limit?, status? }
+ * Returns: { requests[], pagination }
+ * Auth: Required
+ */
+const getAllConnectionRequests = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, status } = req.query;
+    const adminId = req.user.userId;
+
+    // Build filter
+    const filter = {};
+    if (status && ["pending", "approved", "rejected"].includes(status)) {
+      filter.status = status;
+    }
+
+    // Get total count for pagination
+    const total = await DisplayConnectionRequest.countDocuments(filter);
+    const totalPages = Math.ceil(total / limit);
+
+    // Fetch paginated results
+    const requests = await DisplayConnectionRequest.find(filter)
+      .populate("displayId", "displayId displayName location assignedAdmin")
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
+
+    console.log(`✅ Fetched ${requests.length} connection requests`);
+
+    return res.status(200).json(
+      formatSuccessResponse(
+        {
+          data: requests,
+          pagination: {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            total,
+            pages: totalPages,
+          },
+        },
+        "Connection requests fetched successfully"
+      )
+    );
+  } catch (error) {
+    console.error("❌ Get connection requests error:", error.message);
+    return res.status(500).json(formatErrorResponse(error.message));
+  }
+};
+
+/**
+ * Approve a connection request and assign display to admin
+ * Params: { requestId }
+ * Returns: { display }
+ * Auth: Required
+ */
+const approveConnectionRequest = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const adminId = req.user.userId;
+
+    console.log(`🔍 Approving connection request: ${requestId}`);
+
+    // Find the connection request
+    const connectionRequest = await DisplayConnectionRequest.findById(
+      requestId
+    );
+    if (!connectionRequest) {
+      return res
+        .status(404)
+        .json(formatErrorResponse("Connection request not found"));
+    }
+
+    if (connectionRequest.status !== "pending") {
+      return res
+        .status(400)
+        .json(
+          formatErrorResponse(
+            `Cannot approve a ${connectionRequest.status} request`
+          )
+        );
+    }
+
+    // Update the request status
+    connectionRequest.status = "approved";
+    connectionRequest.respondedAt = new Date();
+    connectionRequest.respondedBy = adminId;
+    await connectionRequest.save();
+
+    console.log(
+      `✅ Connection request status updated. Display ID: ${connectionRequest.displayId}`
+    );
+
+    // Update the display and assign to admin
+    const display = await Display.findByIdAndUpdate(
+      connectionRequest.displayId,
+      {
+        assignedAdmin: adminId,
+        status: "offline",
+      },
+      { new: true }
+    );
+
+    if (!display) {
+      console.error(
+        "❌ Display not found for ID:",
+        connectionRequest.displayId
+      );
+      return res
+        .status(404)
+        .json(formatErrorResponse("Associated display not found"));
+    }
+
+    console.log(`✅ Display updated: ${display.displayId}`);
+
+    // Log the action
+    await loggingService.createLog({
+      action: "status_change",
+      entityType: "display",
+      entityId: display._id,
+      userId: adminId,
+      details: {
+        description: `Display approved and assigned to admin: ${display.displayName}`,
+        changes: {
+          assignedAdmin: { from: null, to: adminId },
+          status: { from: "unassigned", to: "offline" },
+        },
+        displayId: display.displayId,
+      },
+      ipAddress: req.ip,
+      userAgent: req.get("user-agent"),
+    });
+
+    console.log(`✅ Connection request ${requestId} approved`);
+
+    return res
+      .status(200)
+      .json(
+        formatSuccessResponse(
+          connectionRequest,
+          "Connection request approved successfully"
+        )
+      );
+  } catch (error) {
+    console.error("❌ Approve connection request error:", error.message);
+    console.error("Stack trace:", error.stack);
+    return res.status(500).json(formatErrorResponse(error.message));
+  }
+};
+
+/**
+ * Reject a connection request
+ * Params: { requestId }
+ * Body: { rejectionReason? }
+ * Returns: { connectionRequest }
+ * Auth: Required
+ */
+const rejectConnectionRequest = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const { rejectionReason } = req.body;
+    const adminId = req.user.userId;
+
+    // Find the connection request
+    const connectionRequest = await DisplayConnectionRequest.findById(
+      requestId
+    );
+    if (!connectionRequest) {
+      return res
+        .status(404)
+        .json(formatErrorResponse("Connection request not found"));
+    }
+
+    if (connectionRequest.status !== "pending") {
+      return res
+        .status(400)
+        .json(
+          formatErrorResponse(
+            `Cannot reject a ${connectionRequest.status} request`
+          )
+        );
+    }
+
+    // Update the request status
+    connectionRequest.status = "rejected";
+    connectionRequest.respondedAt = new Date();
+    connectionRequest.respondedBy = adminId;
+    if (rejectionReason) {
+      connectionRequest.rejectionReason = rejectionReason;
+    }
+    await connectionRequest.save();
+
+    // Log the action
+    await loggingService.createLog({
+      action: "status_change",
+      entityType: "display",
+      entityId: connectionRequest.displayId,
+      userId: adminId,
+      details: {
+        description: `Display rejected${
+          rejectionReason ? ": " + rejectionReason : ""
+        }`,
+        changes: {
+          status: { from: "pending_approval", to: "rejected" },
+        },
+        rejectionReason,
+      },
+      ipAddress: req.ip,
+      userAgent: req.get("user-agent"),
+    });
+
+    console.log(`✅ Connection request ${requestId} rejected`);
+
+    return res
+      .status(200)
+      .json(
+        formatSuccessResponse(
+          connectionRequest,
+          "Connection request rejected successfully"
+        )
+      );
+  } catch (error) {
+    console.error("❌ Reject connection request error:", error.message);
+    return res.status(500).json(formatErrorResponse(error.message));
+  }
+};
+
 export {
   createDisplay,
   getDisplays,
@@ -657,4 +1047,8 @@ export {
   getDisplayByToken,
   reportDisplayStatus,
   loginDisplay,
+  assignDisplayAdmin,
+  getAllConnectionRequests,
+  approveConnectionRequest,
+  rejectConnectionRequest,
 };

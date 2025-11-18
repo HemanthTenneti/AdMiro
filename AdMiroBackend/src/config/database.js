@@ -1,5 +1,31 @@
 import mongoose from "mongoose";
 
+// Clean up old indexes that may cause conflicts
+const cleanupOldIndexes = async () => {
+  try {
+    const db = mongoose.connection.db;
+    if (!db) return;
+
+    const collection = db.collection("displayconnectionrequests");
+    const indexes = await collection.getIndexes();
+
+    // Drop old nested index if it exists
+    if (indexes["displayInfo.macAddress_1"]) {
+      console.log("🧹 Cleaning up old index: displayInfo.macAddress_1");
+      await collection.dropIndex("displayInfo.macAddress_1");
+      console.log("✅ Removed legacy index: displayInfo.macAddress_1");
+    }
+  } catch (error) {
+    // Silently ignore if collection doesn't exist or index not found
+    if (
+      !error.message.includes("ns does not exist") &&
+      !error.message.includes("index not found")
+    ) {
+      console.warn("⚠️ Index cleanup warning:", error.message);
+    }
+  }
+};
+
 const connectDB = async (retryCount = 0, maxRetries = 5) => {
   try {
     const conn = await mongoose.connect(process.env.DATABASE_URL, {
@@ -49,6 +75,8 @@ const connectDB = async (retryCount = 0, maxRetries = 5) => {
 // Handle connection events
 mongoose.connection.on("connected", () => {
   console.log("✅ Mongoose connected to MongoDB");
+  // Clean up old indexes after connection
+  cleanupOldIndexes();
 });
 
 mongoose.connection.on("error", err => {
