@@ -6,26 +6,35 @@ import Link from "next/link";
 import { toast } from "sonner";
 import axiosInstance from "@/lib/axiosConfig";
 import DashboardLayout from "@/components/DashboardLayout";
-import { ArrowLeft, CircleNotch } from "phosphor-react";
+import {
+  ArrowLeft,
+  CircleNotch,
+  Upload,
+  Paste,
+  Link as LinkIcon,
+} from "phosphor-react";
 import gsap from "gsap";
 
 export default function NewAdvertisementPage() {
   const router = useRouter();
   const mainRef = useRef(null);
+  const fileInputRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const [mounted, setMounted] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+  const [mediaPreview, setMediaPreview] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [mediaInputMode, setMediaInputMode] = useState("file"); // "file" or "link"
+  const [mediaLink, setMediaLink] = useState("");
 
   // Form data
   const [formData, setFormData] = useState({
     adName: "",
     description: "",
-    mediaUrl: "",
     mediaType: "image",
     duration: 5,
-    scheduledStart: "",
-    scheduledEnd: "",
   });
 
   // Validation errors
@@ -50,10 +59,94 @@ export default function NewAdvertisementPage() {
     }
   }, [mounted]);
 
+  // Handle paste from clipboard
+  useEffect(() => {
+    const handlePaste = async e => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (let item of items) {
+        if (item.type.startsWith("image/")) {
+          e.preventDefault();
+          const blob = item.getAsFile();
+          handleFile(blob);
+          toast.success("Image pasted! Ready to upload.");
+          break;
+        }
+      }
+    };
+
+    window.addEventListener("paste", handlePaste);
+    return () => window.removeEventListener("paste", handlePaste);
+  }, []);
+
+  const handleFile = file => {
+    // Validate file type
+    const isImage = file.type.startsWith("image/");
+    const isVideo = file.type.startsWith("video/");
+
+    if (!isImage && !isVideo) {
+      setError("Please select an image or video file.");
+      toast.error("Invalid file type. Only images and videos are allowed.");
+      return;
+    }
+
+    // Validate file size (100MB)
+    const maxSize = 100 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setError("File size must not exceed 100MB.");
+      toast.error("File too large. Maximum 100MB allowed.");
+      return;
+    }
+
+    setSelectedFile(file);
+    setFormData(prev => ({
+      ...prev,
+      mediaType: isImage ? "image" : "video",
+    }));
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = e => {
+      setMediaPreview({
+        data: e.target.result,
+        type: isImage ? "image" : "video",
+        name: file.name,
+        size: (file.size / 1024 / 1024).toFixed(2), // MB
+      });
+    };
+    reader.readAsDataURL(file);
+
+    setError("");
+    if (errors.media) {
+      setErrors(prev => ({ ...prev, media: "" }));
+    }
+  };
+
+  const handleDrag = e => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = e => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    const files = e.dataTransfer?.files;
+    if (files && files[0]) {
+      handleFile(files[0]);
+    }
+  };
+
   const validateForm = () => {
     const newErrors = {};
 
-    // Validate adName
     if (!formData.adName.trim()) {
       newErrors.adName = "Advertisement name is required.";
     } else if (formData.adName.length < 2) {
@@ -62,32 +155,20 @@ export default function NewAdvertisementPage() {
       newErrors.adName = "Advertisement name must not exceed 100 characters.";
     }
 
-    // Validate mediaUrl
-    if (!formData.mediaUrl.trim()) {
-      newErrors.mediaUrl = "Media URL is required.";
-    } else {
-      try {
-        new URL(formData.mediaUrl);
-      } catch {
-        newErrors.mediaUrl = "Please enter a valid URL.";
-      }
+    if (!selectedFile && !mediaLink) {
+      newErrors.media = "Media file or link is required.";
     }
 
-    // Validate duration
+    // Validate media type is set
+    if (!formData.mediaType) {
+      newErrors.mediaType = "Media type must be specified.";
+    }
+
     const durationNum = parseInt(formData.duration);
     if (!formData.duration) {
       newErrors.duration = "Duration is required.";
     } else if (isNaN(durationNum) || durationNum < 1 || durationNum > 300) {
       newErrors.duration = "Duration must be between 1 and 300 seconds.";
-    }
-
-    // Validate scheduled dates if provided
-    if (formData.scheduledStart && formData.scheduledEnd) {
-      const start = new Date(formData.scheduledStart);
-      const end = new Date(formData.scheduledEnd);
-      if (start >= end) {
-        newErrors.scheduledEnd = "End date must be after start date.";
-      }
     }
 
     setErrors(newErrors);
@@ -100,7 +181,6 @@ export default function NewAdvertisementPage() {
       ...prev,
       [name]: value,
     }));
-    // Clear error for this field when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -122,36 +202,39 @@ export default function NewAdvertisementPage() {
       setError("");
       console.log("📤 Creating advertisement...");
 
-      const payload = {
-        adName: formData.adName.trim(),
-        description: formData.description.trim(),
-        mediaUrl: formData.mediaUrl.trim(),
-        mediaType: formData.mediaType,
-        duration: parseInt(formData.duration),
-      };
+      if (mediaInputMode === "file") {
+        // File upload path
+        const data = new FormData();
+        data.append("media", selectedFile);
+        data.append("adName", formData.adName.trim());
+        data.append("description", formData.description.trim());
+        data.append("mediaType", formData.mediaType);
+        data.append("duration", parseInt(formData.duration));
 
-      // Add optional fields
-      if (formData.scheduledStart && formData.scheduledEnd) {
-        payload.scheduledStart = formData.scheduledStart;
-        payload.scheduledEnd = formData.scheduledEnd;
+        const response = await axiosInstance.post("/api/ads", data, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
+
+        console.log("✅ Advertisement created:", response.data);
+      } else {
+        // Link path - send as JSON with mediaUrl instead of file
+        const response = await axiosInstance.post("/api/ads", {
+          adName: formData.adName.trim(),
+          description: formData.description.trim(),
+          mediaType: formData.mediaType,
+          duration: parseInt(formData.duration),
+          mediaUrl: mediaLink.trim(),
+          isLink: true,
+        });
+
+        console.log("✅ Advertisement created:", response.data);
       }
 
-      const response = await axiosInstance.post("/api/ads", payload);
-      console.log("✅ Advertisement created:", response.data);
-
       setSuccess(true);
-      setFormData({
-        adName: "",
-        description: "",
-        mediaUrl: "",
-        mediaType: "image",
-        duration: 5,
-        scheduledStart: "",
-        scheduledEnd: "",
-      });
       toast.success("Advertisement created successfully!");
 
-      // Redirect after 1.5 seconds
       setTimeout(() => {
         router.push("/dashboard/ads");
       }, 1500);
@@ -190,27 +273,22 @@ export default function NewAdvertisementPage() {
               <h1 className="text-4xl font-bold text-black">
                 Create Advertisement
               </h1>
-              <p className="text-gray-600">
-                Set up a new advertisement campaign
-              </p>
+              <p className="text-gray-600">Add images or videos to display</p>
             </div>
           </div>
 
-          {/* Success Alert */}
           {success && (
             <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700">
               ✅ Advertisement created successfully! Redirecting...
             </div>
           )}
 
-          {/* Error Alert */}
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
               ❌ {error}
             </div>
           )}
 
-          {/* Form */}
           <form
             onSubmit={handleSubmit}
             className="bg-white rounded-2xl border-2 border-[#e5e5e5] p-8 space-y-6">
@@ -243,189 +321,250 @@ export default function NewAdvertisementPage() {
             {/* Description */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Description
+                Description{" "}
+                <span className="text-gray-500 text-xs">(Optional)</span>
               </label>
               <textarea
                 name="description"
                 value={formData.description}
                 onChange={handleInputChange}
-                placeholder="Optional: Add details about your advertisement campaign"
+                placeholder="Add any notes about this advertisement..."
                 maxLength={500}
-                rows={4}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b6f47] focus:border-transparent transition"
+                rows={3}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b6f47] focus:border-transparent transition resize-none"
               />
               <p className="text-xs text-gray-500 mt-2">
                 {formData.description.length}/500
               </p>
             </div>
 
-            {/* Media Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Media Type */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Media Type <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="mediaType"
-                  value={formData.mediaType}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b6f47] focus:border-transparent transition">
-                  <option value="image">Image</option>
-                  <option value="video">Video</option>
-                </select>
-              </div>
-
-              {/* Duration */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Duration (seconds) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  name="duration"
-                  value={formData.duration}
-                  onChange={handleInputChange}
-                  placeholder="e.g., 15"
-                  min="1"
-                  max="300"
-                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b6f47] focus:border-transparent transition ${
-                    errors.duration ? "border-red-500" : "border-gray-300"
-                  }`}
-                />
-                {errors.duration && (
-                  <p className="text-sm text-red-500 mt-2">{errors.duration}</p>
-                )}
-                <p className="text-xs text-gray-500 mt-2">
-                  Valid range: 1-300 seconds
-                </p>
-              </div>
-            </div>
-
-            {/* Media URL */}
+            {/* Media Upload */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Media URL <span className="text-red-500">*</span>
+                Media File <span className="text-red-500">*</span>
               </label>
-              <input
-                type="url"
-                name="mediaUrl"
-                value={formData.mediaUrl}
-                onChange={handleInputChange}
-                placeholder="https://example.com/image.jpg"
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b6f47] focus:border-transparent transition ${
-                  errors.mediaUrl ? "border-red-500" : "border-gray-300"
-                }`}
-              />
-              {errors.mediaUrl && (
-                <p className="text-sm text-red-500 mt-2">{errors.mediaUrl}</p>
-              )}
-              <p className="text-xs text-gray-500 mt-2">
-                {formData.mediaType === "image"
-                  ? "Recommended: PNG, JPEG, or WebP format"
-                  : "Recommended: MP4 or WebM format"}
-              </p>
-            </div>
 
-            {/* Scheduling Section */}
-            <div className="border-t-2 border-gray-200 pt-6">
-              <h3 className="text-lg font-semibold text-black mb-4">
-                Scheduling (Optional)
-              </h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Scheduled Start */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Start Date & Time
-                  </label>
-                  <input
-                    type="datetime-local"
-                    name="scheduledStart"
-                    value={formData.scheduledStart}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b6f47] focus:border-transparent transition"
-                  />
-                </div>
-
-                {/* Scheduled End */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    End Date & Time
-                  </label>
-                  <input
-                    type="datetime-local"
-                    name="scheduledEnd"
-                    value={formData.scheduledEnd}
-                    onChange={handleInputChange}
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b6f47] focus:border-transparent transition ${
-                      errors.scheduledEnd ? "border-red-500" : "border-gray-300"
-                    }`}
-                  />
-                  {errors.scheduledEnd && (
-                    <p className="text-sm text-red-500 mt-2">
-                      {errors.scheduledEnd}
-                    </p>
-                  )}
-                </div>
+              {/* Toggle between File and Link */}
+              <div className="flex gap-2 mb-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMediaInputMode("file");
+                    setMediaLink("");
+                    setMediaPreview(null);
+                  }}
+                  className={`flex-1 px-4 py-2 rounded-lg font-semibold transition ${
+                    mediaInputMode === "file"
+                      ? "bg-[#8b6f47] text-white"
+                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  }`}>
+                  <Upload size={16} weight="bold" className="inline mr-2" />
+                  Upload File
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMediaInputMode("link");
+                    setSelectedFile(null);
+                    setMediaPreview(null);
+                  }}
+                  className={`flex-1 px-4 py-2 rounded-lg font-semibold transition ${
+                    mediaInputMode === "link"
+                      ? "bg-[#8b6f47] text-white"
+                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  }`}>
+                  <LinkIcon size={16} weight="bold" className="inline mr-2" />
+                  Use Link
+                </button>
               </div>
 
-              <p className="text-xs text-gray-500 mt-4">
-                Leave blank to activate the advertisement immediately.
+              {/* File Upload Mode */}
+              {mediaInputMode === "file" ? (
+                <>
+                  {!mediaPreview ? (
+                    <div
+                      onDragEnter={handleDrag}
+                      onDragLeave={handleDrag}
+                      onDragOver={handleDrag}
+                      onDrop={handleDrop}
+                      className={`w-full border-2 border-dashed rounded-lg p-12 text-center transition cursor-pointer ${
+                        dragActive
+                          ? "border-[#8b6f47] bg-[#f5f0e8]"
+                          : "border-gray-300 hover:border-[#8b6f47]"
+                      } ${errors.media ? "border-red-500" : ""}`}
+                      onClick={() => fileInputRef.current?.click()}>
+                      <Upload
+                        size={32}
+                        className="mx-auto mb-4 text-[#8b6f47]"
+                      />
+                      <p className="text-gray-700 font-semibold mb-2">
+                        Drag and drop your image or video
+                      </p>
+                      <p className="text-gray-500 text-sm mb-4">
+                        Or click to browse (Max 100MB)
+                      </p>
+                      <p className="text-gray-400 text-xs mb-4">
+                        Supported: JPG, PNG, GIF, WebP, MP4, MOV, AVI
+                      </p>
+                      <button
+                        type="button"
+                        className="inline-block px-6 py-2 bg-[#8b6f47] text-white rounded-lg hover:bg-[#7a5f3a] transition font-semibold">
+                        Browse Files
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="border-2 border-gray-300 rounded-lg p-6 bg-gray-50">
+                      {mediaPreview.type === "image" ? (
+                        <div className="text-center">
+                          <img
+                            src={mediaPreview.data}
+                            alt="Preview"
+                            className="max-h-48 mx-auto rounded-lg mb-4"
+                          />
+                          <p className="text-gray-700 font-semibold">
+                            {mediaPreview.name}
+                          </p>
+                          <p className="text-gray-500 text-sm">
+                            {mediaPreview.size} MB
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="text-center">
+                          <video
+                            src={mediaPreview.data}
+                            controls
+                            className="max-h-48 mx-auto rounded-lg mb-4"
+                          />
+                          <p className="text-gray-700 font-semibold">
+                            {mediaPreview.name}
+                          </p>
+                          <p className="text-gray-500 text-sm">
+                            {mediaPreview.size} MB
+                          </p>
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMediaPreview(null);
+                          setSelectedFile(null);
+                          setFormData(prev => ({
+                            ...prev,
+                            mediaType: "image",
+                          }));
+                        }}
+                        className="mt-4 text-red-500 hover:text-red-700 font-semibold">
+                        Remove File
+                      </button>
+                    </div>
+                  )}
+                  <p className="text-xs text-gray-500 mt-2">
+                    💡 Tip: You can paste images directly using Ctrl+V (Cmd+V on
+                    Mac)!
+                  </p>
+                </>
+              ) : (
+                /* Link Input Mode */
+                <div>
+                  <input
+                    type="url"
+                    value={mediaLink}
+                    onChange={e => setMediaLink(e.target.value)}
+                    placeholder="https://example.com/image.jpg"
+                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b6f47] focus:border-transparent transition ${
+                      errors.media ? "border-red-500" : "border-gray-300"
+                    }`}
+                  />
+                  {mediaLink && (
+                    <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      <p className="text-sm text-gray-700 mb-3">Preview:</p>
+                      {formData.mediaType === "image" ? (
+                        <img
+                          src={mediaLink}
+                          alt="Preview"
+                          className="max-h-48 mx-auto rounded-lg"
+                          onError={() =>
+                            toast.error("Failed to load image from URL")
+                          }
+                        />
+                      ) : (
+                        <video
+                          src={mediaLink}
+                          controls
+                          className="max-h-48 mx-auto rounded-lg"
+                          onError={() =>
+                            toast.error("Failed to load video from URL")
+                          }
+                        />
+                      )}
+                    </div>
+                  )}
+                  <p className="text-xs text-gray-500 mt-2">
+                    Paste a direct link to an image or video file
+                  </p>
+                </div>
+              )}
+
+              {errors.media && (
+                <p className="text-sm text-red-500 mt-2">{errors.media}</p>
+              )}
+            </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,video/*"
+              onChange={e => e.target.files && handleFile(e.target.files[0])}
+              className="hidden"
+            />
+
+            {/* Duration */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Display Duration (seconds){" "}
+                <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                name="duration"
+                value={formData.duration}
+                onChange={handleInputChange}
+                min="1"
+                max="300"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b6f47] focus:border-transparent transition ${
+                  errors.duration ? "border-red-500" : "border-gray-300"
+                }`}
+              />
+              {errors.duration && (
+                <p className="text-sm text-red-500 mt-1">{errors.duration}</p>
+              )}
+              <p className="text-xs text-gray-500 mt-2">
+                How long to display this content (1-300 seconds)
               </p>
             </div>
 
-            {/* Form Actions */}
-            <div className="flex items-center gap-4 pt-4 border-t border-gray-200">
-              <button
-                type="button"
-                onClick={() => router.back()}
-                disabled={loading}
-                className="flex-1 px-6 py-3 bg-gray-200 hover:bg-gray-300 disabled:opacity-50 text-gray-800 font-semibold rounded-lg transition">
-                Cancel
-              </button>
+            {/* Submit Button */}
+            <div className="flex gap-4 pt-6 border-t">
               <button
                 type="submit"
                 disabled={loading}
                 className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-[#8b6f47] hover:bg-[#7a5f3a] disabled:opacity-50 text-white font-semibold rounded-lg transition">
                 {loading ? (
                   <>
-                    <CircleNotch
-                      size={20}
-                      className="animate-spin"
-                      weight="bold"
-                    />
+                    <CircleNotch size={20} className="animate-spin" />
                     Creating...
                   </>
                 ) : (
                   "Create Advertisement"
                 )}
               </button>
+              <Link
+                href="/dashboard/ads"
+                className="flex items-center justify-center px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition">
+                Cancel
+              </Link>
             </div>
           </form>
-
-          {/* Help Section */}
-          <div className="mt-8 bg-blue-50 rounded-2xl border border-blue-200 p-6">
-            <h3 className="font-semibold text-blue-900 mb-3">💡 Tips</h3>
-            <ul className="space-y-2 text-sm text-blue-800">
-              <li>
-                <strong>Duration:</strong> How long the advertisement plays on
-                displays (1-300 seconds)
-              </li>
-              <li>
-                <strong>Media URL:</strong> Direct link to your image or video
-                file
-              </li>
-              <li>
-                <strong>Scheduling:</strong> Set specific dates to automatically
-                start/stop your campaign
-              </li>
-              <li>
-                <strong>Status:</strong> New advertisements start as "draft" and
-                can be scheduled or activated manually
-              </li>
-            </ul>
-          </div>
         </div>
       </main>
     </DashboardLayout>

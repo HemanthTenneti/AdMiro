@@ -2,6 +2,7 @@ import Display from "../models/Display.js";
 import DisplayConnectionRequest from "../models/DisplayConnectionRequest.js";
 import { v4 as uuidv4 } from "uuid";
 import bcrypt from "bcryptjs";
+import mongoose from "mongoose";
 import {
   formatSuccessResponse,
   formatErrorResponse,
@@ -1105,6 +1106,145 @@ const rejectConnectionRequest = async (req, res) => {
   }
 };
 
+/**
+ * Get display's current loop with populated advertisements
+ * Params: { token } - connection token
+ * Returns: { loop, advertisements, message }
+ * Auth: Not required (public endpoint for displays)
+ */
+const getDisplayLoop = async (req, res) => {
+  try {
+    const { token } = req.params;
+
+    if (!token) {
+      return res
+        .status(400)
+        .json(formatErrorResponse("Connection token is required."));
+    }
+
+    const display = await Display.findOne({ connectionToken: token }).populate(
+      "currentLoop"
+    );
+
+    if (!display) {
+      return res.status(404).json(formatErrorResponse("Display not found."));
+    }
+
+    // If no current loop assigned, return empty array
+    if (!display.currentLoop) {
+      return res.status(200).json(
+        formatSuccessResponse(
+          {
+            loop: null,
+            advertisements: [],
+          },
+          "No loop assigned to this display."
+        )
+      );
+    }
+
+    // Populate advertisements in the loop
+    const populatedLoop = await display.currentLoop.populate(
+      "advertisements.adId"
+    );
+
+    // Transform the advertisements to include all details
+    const advertisements = populatedLoop.advertisements.map(item => ({
+      ...item.adId.toObject(),
+      loopOrder: item.loopOrder,
+    }));
+
+    console.log(
+      "✅ Display loop fetched:",
+      display.displayId,
+      "with",
+      advertisements.length,
+      "ads"
+    );
+
+    return res.status(200).json(
+      formatSuccessResponse(
+        {
+          loop: populatedLoop,
+          advertisements,
+        },
+        "Loop and advertisements fetched successfully."
+      )
+    );
+  } catch (error) {
+    console.error("❌ Get display loop error:", error.message);
+    return res.status(500).json(formatErrorResponse(error.message));
+  }
+};
+
+/**
+ * Assign a loop to a display
+ * Params: { displayId }
+ * Body: { loopId }
+ * Returns: { display, message }
+ * Auth: Required (must be display owner)
+ */
+const assignLoopToDisplay = async (req, res) => {
+  try {
+    const { displayId } = req.params;
+    const { loopId } = req.body;
+
+    if (!loopId) {
+      return res.status(400).json(formatErrorResponse("Loop ID is required."));
+    }
+
+    // Find the display
+    const display = await Display.findById(displayId);
+    if (!display) {
+      return res.status(404).json(formatErrorResponse("Display not found."));
+    }
+
+    // Check if user is the owner of the display
+    const userId = req.user.userId?.toString?.() || req.user.userId;
+    const displayOwnerId =
+      display.assignedAdmin?.toString() || display.assignedAdmin;
+
+    if (displayOwnerId !== userId) {
+      return res
+        .status(403)
+        .json(
+          formatErrorResponse(
+            "You do not have permission to assign a loop to this display."
+          )
+        );
+    }
+
+    // Find the loop
+    const DisplayLoop = await mongoose.model("DisplayLoop");
+    const loop = await DisplayLoop.findById(loopId);
+    if (!loop) {
+      return res.status(404).json(formatErrorResponse("Loop not found."));
+    }
+
+    // Assign the loop to the display
+    display.currentLoop = loopId;
+    await display.save();
+
+    console.log(`✅ Loop ${loopId} assigned to display ${displayId}`);
+
+    return res
+      .status(200)
+      .json(
+        formatSuccessResponse(display, "Loop assigned to display successfully.")
+      );
+  } catch (error) {
+    console.error("❌ Assign loop to display error:", error.message);
+    return res.status(500).json(formatErrorResponse(error.message));
+  }
+};
+
+/**
+ * Get display's current loop with populated advertisements
+ * Params: { token } - connection token
+ * Returns: { loop, advertisements, message }
+ * Auth: Not required (public endpoint for displays)
+ */
+
 export {
   createDisplay,
   getDisplays,
@@ -1119,4 +1259,6 @@ export {
   getAllConnectionRequests,
   approveConnectionRequest,
   rejectConnectionRequest,
+  getDisplayLoop,
+  assignLoopToDisplay,
 };

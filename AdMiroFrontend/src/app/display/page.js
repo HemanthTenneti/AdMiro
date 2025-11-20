@@ -31,6 +31,7 @@ export default function DisplayPage() {
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const menuRef = useRef(null);
 
   // Report status to backend
@@ -54,35 +55,33 @@ export default function DisplayPage() {
   // Fetch ads for display
   const fetchAdsForDisplay = useCallback(async () => {
     try {
-      console.log("📺 Fetching advertisements...");
-      const response = await axiosInstance.get("/api/ads/public?limit=100");
-      console.log("✅ Ads fetched:", response.data);
+      const token = localStorage.getItem("connectionToken");
+      if (!token) {
+        setError("No connection token found");
+        return;
+      }
+
+      console.log("📺 Fetching display loop and advertisements...");
+      const response = await axiosInstance.get(`/api/displays/loop/${token}`);
+      console.log("✅ Display loop fetched:", response.data);
 
       const advertisements = response.data.data.advertisements || [];
 
       if (advertisements.length === 0) {
         setError("No advertisements assigned to this display");
         setAds([]);
+        setCurrentAd(null);
         return;
       }
 
-      // Filter only active ads
-      const activeAds = advertisements.filter(ad => ad.status === "active");
-
-      if (activeAds.length === 0) {
-        setError("No active advertisements to display");
-        setAds([]);
-        return;
-      }
-
-      setAds(activeAds);
+      setAds(advertisements);
       setCurrentAdIndex(0);
-      setCurrentAd(activeAds[0]);
-      setTimeRemaining(activeAds[0].duration);
+      setCurrentAd(advertisements[0]);
+      setTimeRemaining(advertisements[0].duration);
       setError("");
     } catch (err) {
-      console.error("❌ Error fetching ads:", err);
-      setError("Failed to load advertisements");
+      console.error("❌ Error fetching display loop:", err);
+      setError("Failed to load advertisements for this display");
     }
   }, []);
 
@@ -113,7 +112,15 @@ export default function DisplayPage() {
       reportDisplayStatus(token, "online");
     }, 10000);
 
-    return () => clearInterval(heartbeatInterval);
+    // Set up loop polling (check for new loop assignments every 30 seconds)
+    const loopPollingInterval = setInterval(() => {
+      fetchAdsForDisplay();
+    }, 30000);
+
+    return () => {
+      clearInterval(heartbeatInterval);
+      clearInterval(loopPollingInterval);
+    };
   }, [fetchAdsForDisplay, reportDisplayStatus]);
 
   // Request fullscreen when display is active
@@ -242,6 +249,19 @@ export default function DisplayPage() {
     setCurrentAd(null);
     setLoginMode(true);
     setShowMenu(false);
+  };
+
+  // Handle refresh loop
+  const handleRefreshLoop = async () => {
+    setIsRefreshing(true);
+    try {
+      await fetchAdsForDisplay();
+      // Show brief visual feedback
+      setTimeout(() => setIsRefreshing(false), 500);
+    } catch (err) {
+      console.error("Refresh failed:", err);
+      setIsRefreshing(false);
+    }
   };
 
   // Close menu when clicking outside
@@ -432,6 +452,17 @@ export default function DisplayPage() {
                 </button>
 
                 <button
+                  onClick={handleRefreshLoop}
+                  disabled={isRefreshing}
+                  className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-blue-50 text-blue-600 font-semibold transition border-b border-gray-100 disabled:opacity-50">
+                  <Repeat
+                    size={18}
+                    className={isRefreshing ? "animate-spin" : ""}
+                  />
+                  {isRefreshing ? "Refreshing..." : "Refresh Loop"}
+                </button>
+
+                <button
                   onClick={handleLogout}
                   className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-red-50 text-red-600 font-semibold transition">
                   <SignOut size={18} />
@@ -457,13 +488,62 @@ export default function DisplayPage() {
           </div>
         </div>
       ) : (
-        <div className="text-center">
-          <CircleNotch
-            size={48}
-            className="text-white animate-spin mx-auto mb-4"
-            weight="bold"
-          />
-          <p className="text-white">Loading advertisements...</p>
+        <div className="w-full h-full flex items-center justify-center bg-black relative">
+          <div className="text-center">
+            <p className="text-red-500 text-2xl font-semibold mb-4">{error}</p>
+            <p className="text-gray-400 text-sm">
+              Press ESC to return to login
+            </p>
+          </div>
+
+          {/* Menu Button (top left) - visible even with errors */}
+          <div className="absolute top-4 left-4 z-50" ref={menuRef}>
+            <button
+              onClick={() => setShowMenu(!showMenu)}
+              className="p-3 bg-black bg-opacity-60 hover:bg-opacity-80 text-white rounded-lg transition"
+              title="Display options">
+              <DotsThreeVertical size={24} weight="bold" />
+            </button>
+
+            {/* Dropdown Menu */}
+            {showMenu && (
+              <div className="absolute top-14 left-0 bg-white rounded-lg shadow-xl overflow-hidden min-w-48 z-50">
+                <div className="p-4 border-b border-gray-200 bg-gray-50">
+                  <p className="text-sm font-semibold text-gray-700">
+                    Display ID
+                  </p>
+                  <p className="text-xs text-gray-600 font-mono break-all">
+                    {displayId}
+                  </p>
+                </div>
+
+                <button
+                  onClick={handleSwitchDisplay}
+                  className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-gray-100 text-gray-700 font-semibold transition border-b border-gray-100">
+                  <Repeat size={18} />
+                  Switch Display
+                </button>
+
+                <button
+                  onClick={handleRefreshLoop}
+                  disabled={isRefreshing}
+                  className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-blue-50 text-blue-600 font-semibold transition border-b border-gray-100 disabled:opacity-50">
+                  <Repeat
+                    size={18}
+                    className={isRefreshing ? "animate-spin" : ""}
+                  />
+                  {isRefreshing ? "Refreshing..." : "Refresh Loop"}
+                </button>
+
+                <button
+                  onClick={handleLogout}
+                  className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-red-50 text-red-600 font-semibold transition">
+                  <SignOut size={18} />
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

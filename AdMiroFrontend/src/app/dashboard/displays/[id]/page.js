@@ -5,7 +5,13 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import axiosInstance from "@/lib/axiosConfig";
 import DashboardLayout from "@/components/DashboardLayout";
-import { ArrowLeft, PencilSimple, Trash, CircleNotch } from "phosphor-react";
+import {
+  ArrowLeft,
+  PencilSimple,
+  Trash,
+  CircleNotch,
+  Play,
+} from "phosphor-react";
 import gsap from "gsap";
 
 export default function DisplayDetailPage() {
@@ -277,7 +283,14 @@ export default function DisplayDetailPage() {
               </div>
 
               {/* Actions */}
-              <div className="flex items-center gap-4 pt-8 border-t border-[#e5e5e5]">
+              <div className="flex flex-wrap items-center gap-4 pt-8 border-t border-[#e5e5e5]">
+                <Link
+                  href={`/dashboard/displays/${display._id}/loops`}
+                  className="flex items-center gap-2 px-6 py-3 bg-[#2d9f4a] hover:bg-[#258b41] text-white font-semibold rounded-lg transition">
+                  <Play size={18} weight="bold" />
+                  Manage Loops
+                </Link>
+
                 <Link
                   href={`/dashboard/displays/${display._id}/edit`}
                   className="flex items-center gap-2 px-6 py-3 bg-[#8b6f47] hover:bg-[#7a5f3a] text-white font-semibold rounded-lg transition">

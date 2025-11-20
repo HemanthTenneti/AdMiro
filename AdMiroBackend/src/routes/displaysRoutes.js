@@ -13,6 +13,8 @@ import {
   getAllConnectionRequests,
   approveConnectionRequest,
   rejectConnectionRequest,
+  getDisplayLoop,
+  assignLoopToDisplay,
 } from "../controllers/displaysController.js";
 import { verifyToken } from "../middleware/auth.js";
 
@@ -97,6 +99,14 @@ router.get("/:id", verifyToken, getDisplayById);
 router.get("/by-token/:token", getDisplayByToken);
 
 /**
+ * GET /api/displays/loop/:token
+ * Get display's current loop with advertisements
+ * Auth: Not required (public endpoint for displays)
+ * Params: { token } - connection token
+ */
+router.get("/loop/:token", getDisplayLoop);
+
+/**
  * POST /api/displays/report-status
  * Report display status (heartbeat from browser display)
  * Auth: Not required (uses connection token)
@@ -119,6 +129,14 @@ router.put("/:id", verifyToken, updateDisplay);
  * Body: { }
  */
 router.put("/:id/assign-admin", verifyToken, assignDisplayAdmin);
+
+/**
+ * PUT /api/displays/:displayId/assign-loop
+ * Assign a loop to a display
+ * Auth: Required (must be display owner)
+ * Body: { loopId }
+ */
+router.put("/:displayId/assign-loop", verifyToken, assignLoopToDisplay);
 
 /**
  * DELETE /api/displays/:id

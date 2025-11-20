@@ -8,30 +8,32 @@ import * as loggingService from "../services/loggingService.js";
 
 /**
  * Create a new advertisement
- * Body: { adName, description, mediaUrl, mediaType, duration, scheduledStart, scheduledEnd, thumbnailUrl? }
+ * Body: { adName, description, mediaType, duration, mediaUrl?, isLink? }
+ * File: Single file upload (image or video) - optional if using link
  * Returns: { advertisement, message }
  * Auth: Required
  */
 const createAdvertisement = async (req, res) => {
   try {
-    const {
-      adName,
-      description,
-      mediaUrl,
-      mediaType,
-      duration,
-      scheduledStart,
-      scheduledEnd,
-      thumbnailUrl,
-    } = req.body;
+    const { adName, description, mediaType, duration, mediaUrl, isLink } =
+      req.body;
 
     // Validation
-    if (!adName || !mediaUrl || !mediaType || !duration) {
+    if (!adName || !mediaType || !duration) {
+      return res
+        .status(400)
+        .json(
+          formatErrorResponse("Ad name, media type, and duration are required.")
+        );
+    }
+
+    // Check if either file or link is provided
+    if (!req.file && !mediaUrl) {
       return res
         .status(400)
         .json(
           formatErrorResponse(
-            "Ad name, media URL, media type, and duration are required."
+            "Either a media file or a valid media URL is required."
           )
         );
     }
@@ -59,43 +61,67 @@ const createAdvertisement = async (req, res) => {
         );
     }
 
-    // Validate scheduled dates if provided
-    let status = "draft";
-    let startTime = null;
-    let endTime = null;
+    let finalMediaUrl;
+    let fileSize = 0;
 
-    if (scheduledStart || scheduledEnd) {
-      if (!scheduledStart || !scheduledEnd) {
+    // Handle file upload vs link
+    if (req.file) {
+      // File upload path
+      // Validate file size (100MB limit)
+      const maxFileSize = 100 * 1024 * 1024;
+      if (req.file.size > maxFileSize) {
+        return res
+          .status(400)
+          .json(formatErrorResponse("File size must not exceed 100MB."));
+      }
+
+      // Validate file type matches mediaType
+      const isImage = req.file.mimetype.startsWith("image/");
+      const isVideo = req.file.mimetype.startsWith("video/");
+
+      if (mediaType === "image" && !isImage) {
         return res
           .status(400)
           .json(
             formatErrorResponse(
-              "Both scheduled start and end times are required if scheduling."
+              "Media type is 'image' but file is not an image."
             )
           );
       }
 
-      startTime = new Date(scheduledStart);
-      endTime = new Date(scheduledEnd);
-
-      if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
+      if (mediaType === "video" && !isVideo) {
         return res
           .status(400)
           .json(
-            formatErrorResponse("Invalid date format for scheduled times.")
+            formatErrorResponse(
+              "Media type is 'video' but file is not a video."
+            )
           );
       }
 
-      if (startTime >= endTime) {
+      finalMediaUrl = `/uploads/media/${req.file.filename}`;
+      fileSize = req.file.size;
+    } else {
+      // Link path - validate URL
+      if (!mediaUrl || typeof mediaUrl !== "string") {
         return res
           .status(400)
-          .json(formatErrorResponse("Start time must be before end time."));
+          .json(formatErrorResponse("Media URL must be a valid string."));
       }
 
-      status = "scheduled";
+      // Basic URL validation
+      try {
+        new URL(mediaUrl);
+      } catch (err) {
+        return res
+          .status(400)
+          .json(formatErrorResponse("Media URL must be a valid URL."));
+      }
+
+      finalMediaUrl = mediaUrl.trim();
     }
 
-    // Generate unique ad ID
+    // All new ads are created as active
     const adId = `AD-${uuidv4().split("-")[0].toUpperCase()}`;
 
     // Create advertisement
@@ -103,14 +129,13 @@ const createAdvertisement = async (req, res) => {
       adId,
       adName: adName.trim(),
       description: description?.trim() || "",
-      mediaUrl,
+      mediaUrl: finalMediaUrl,
       mediaType,
       duration: durationNum,
-      thumbnailUrl: thumbnailUrl || null,
-      scheduledStart: startTime,
-      scheduledEnd: endTime,
-      status,
+      thumbnailUrl: mediaType === "image" ? finalMediaUrl : null, // Images serve as their own thumbnail
+      status: "active",
       advertiser: req.user.userId,
+      fileSize,
     });
 
     await newAdvertisement.save();
@@ -128,6 +153,7 @@ const createAdvertisement = async (req, res) => {
           adName,
           mediaType,
           duration: durationNum,
+          fileSize,
         },
       },
       ipAddress: req.ip,

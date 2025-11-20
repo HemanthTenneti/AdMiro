@@ -301,7 +301,7 @@ export default function CreateLoopPage() {
                         type="button"
                         onClick={() => handleRemoveAd(idx)}
                         className="p-2 hover:bg-red-100 text-red-600 rounded-lg transition">
-                        <Trash2 size={20} />
+                        <Trash size={20} />
                       </button>
                     </div>
                   ))}

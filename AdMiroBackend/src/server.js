@@ -3,6 +3,8 @@ import express from "express";
 import helmet from "helmet";
 import morgan from "morgan";
 import session from "express-session";
+import path from "path";
+import { fileURLToPath } from "url";
 import passportConfig from "./config/passport.js";
 import connectDB from "./config/database.js";
 import corsMiddleware from "./middleware/cors.js";
@@ -13,6 +15,7 @@ import routes from "./routes/index.js";
 
 const app = express();
 const PORT = process.env.PORT || 8000;
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Middleware
@@ -28,6 +31,9 @@ app.use(logRequest);
 
 // CORS
 app.use(corsMiddleware);
+
+// Serve static files (media uploads)
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // Session for Passport
 app.use(

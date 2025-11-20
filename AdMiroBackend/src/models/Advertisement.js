@@ -41,18 +41,10 @@ const advertisementSchema = new mongoose.Schema(
       maxlength: 500,
       default: "",
     },
-    scheduledStart: {
-      type: Date,
-      required: [true, "Scheduled start time is required"],
-    },
-    scheduledEnd: {
-      type: Date,
-      required: [true, "Scheduled end time is required"],
-    },
     status: {
       type: String,
-      enum: ["active", "scheduled", "expired", "paused"],
-      default: "scheduled",
+      enum: ["active", "expired", "paused"],
+      default: "active",
     },
     targetAudience: {
       type: String,

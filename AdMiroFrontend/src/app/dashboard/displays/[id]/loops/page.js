@@ -76,6 +76,20 @@ export default function DisplayLoopsPage() {
     }
   };
 
+  const handleAssign = async loopId => {
+    try {
+      await axiosInstance.put(`/api/displays/${displayId}/assign-loop`, {
+        loopId,
+      });
+      toast.success("Loop assigned to display successfully!");
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.message || "Failed to assign loop";
+      setError(errorMessage);
+      toast.error(errorMessage);
+    }
+  };
+
   const formatDuration = seconds => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -160,6 +174,12 @@ export default function DisplayLoopsPage() {
                     </div>
                     <div className="flex gap-2">
                       <button
+                        onClick={() => handleAssign(loop._id)}
+                        className="px-4 py-2 bg-[#8b6f47] text-white font-semibold rounded-lg hover:bg-[#7a5f3f] transition flex items-center gap-2">
+                        <ListChecks size={18} weight="bold" />
+                        Assign to Display
+                      </button>
+                      <button
                         onClick={() =>
                           router.push(
                             `/dashboard/displays/${displayId}/loops/${loop._id}/edit`
@@ -171,7 +191,7 @@ export default function DisplayLoopsPage() {
                       <button
                         onClick={() => setDeleteConfirm(loop._id)}
                         className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
-                        <Trash2 size={20} weight="bold" />
+                        <Trash size={20} weight="bold" />
                       </button>
                     </div>
                   </div>

@@ -1,5 +1,6 @@
 import express from "express";
 import { verifyToken } from "../middleware/auth.js";
+import { upload } from "../middleware/upload.js";
 import {
   createAdvertisement,
   getAdvertisements,
@@ -17,8 +18,20 @@ const router = express.Router();
  * Most routes require authentication via verifyToken middleware
  */
 
-// POST /api/ads - Create a new advertisement
-router.post("/", verifyToken, createAdvertisement);
+// Middleware to handle optional file upload
+const handleOptionalFileUpload = (req, res, next) => {
+  // Use multer single upload, but don't fail if no file is provided
+  upload.single("media")(req, res, err => {
+    // If error is "Unexpected field", it means no file was sent (which is OK for link mode)
+    if (err && !err.message.includes("Unexpected")) {
+      return res.status(400).json({ message: err.message });
+    }
+    next();
+  });
+};
+
+// POST /api/ads - Create a new advertisement (with file upload or link)
+router.post("/", verifyToken, handleOptionalFileUpload, createAdvertisement);
 
 // GET /api/ads/public - Get all active advertisements (public endpoint for displays)
 router.get("/public", getPublicAdvertisements);
