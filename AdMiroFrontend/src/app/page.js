@@ -177,21 +177,21 @@ export default function Home() {
 
       {/* Hero Section */}
       <section className="max-w-7xl mx-auto px-4 md:px-8 py-16 md:py-32">
-        <div className="max-w-3xl">
+        <div className="max-w-3xl mx-auto text-center">
           <h1
             className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-bold leading-tight text-black mb-6 md:mb-8"
             ref={heroTitleRef}>
             One platform. Zero complexity.
           </h1>
           <p
-            className="text-base md:text-lg lg:text-xl text-gray-700 mb-8 md:mb-12 leading-relaxed max-w-2xl"
+            className="text-base md:text-lg lg:text-xl text-gray-700 mb-8 md:mb-12 leading-relaxed max-w-2xl mx-auto"
             ref={heroDescRef}>
             Manage digital displays and advertisements at scale. Push content in
             real-time, track performance, and grow your business—all from one
             intelligent dashboard.
           </p>
 
-          <div className="flex gap-4 flex-wrap" ref={heroCTARef}>
+          <div className="flex gap-4 flex-wrap justify-center" ref={heroCTARef}>
             <Link
               href="/login"
               className="px-6 md:px-8 py-3 md:py-4 border-2 border-[#8b6f47] text-black font-bold rounded-lg hover:bg-[#f5f0e8] transition inline-flex items-center gap-2 text-base md:text-lg">

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import axiosInstance from "@/lib/axiosConfig";
 import { useAuthStore } from "@/context/authStore";
 import gsap from "gsap";
-import { Eye, EyeSlash } from "phosphor-react";
+import { Eye, EyeSlash, Monitor, Plug } from "phosphor-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -501,13 +501,19 @@ export default function LoginPage() {
                 <div className="space-y-2">
                   <Link
                     href="/display-register"
-                    className="w-full block px-6 py-2 border-2 border-[#8b6f47] hover:bg-[#8b6f47] hover:text-white text-[#8b6f47] font-semibold rounded-lg transition text-center">
-                    📺 Register Display
+                    className="w-full px-6 py-2 border-2 border-[#8b6f47] text-[#8b6f47] font-semibold rounded-lg hover:bg-[#f5f0e8] transition text-center flex items-center justify-center gap-2">
+                    <Monitor
+                      size={18}
+                      weight="bold"
+                      className="text-[#8b6f47]"
+                    />
+                    Register Display
                   </Link>
                   <Link
                     href="/display-login"
-                    className="w-full block px-6 py-2 border-2 border-blue-500 hover:bg-blue-500 hover:text-white text-blue-500 font-semibold rounded-lg transition text-center">
-                    🔌 Login to Display
+                    className="w-full px-6 py-2 border-2 border-blue-500 font-semibold rounded-lg hover:bg-blue-50 transition text-center flex items-center justify-center gap-2">
+                    <Plug size={18} weight="bold" className="text-blue-500" />
+                    <span className="text-blue-500">Login to Display</span>
                   </Link>
                 </div>
                 <p className="text-xs text-gray-500 mt-2 text-center">

@@ -13,6 +13,8 @@ import {
   CircleNotch,
   MagnifyingGlass,
   X,
+  Copy,
+  Check,
 } from "phosphor-react";
 import gsap from "gsap";
 
@@ -26,6 +28,7 @@ export default function DisplaysPage() {
   const [deleteLoading, setDeleteLoading] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
+  const [copiedId, setCopiedId] = useState(null);
   const itemsPerPage = 10;
 
   // Check auth and fetch displays
@@ -101,6 +104,13 @@ export default function DisplaysPage() {
     } finally {
       setDeleteLoading(null);
     }
+  };
+
+  const handleCopyDisplayId = displayId => {
+    navigator.clipboard.writeText(displayId);
+    setCopiedId(displayId);
+    toast.success("Display ID copied!");
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
   const getStatusColor = status => {
@@ -298,9 +308,31 @@ export default function DisplaysPage() {
                         key={display._id}
                         className="border-b border-[#e5e5e5] hover:bg-[#faf9f7] transition">
                         <td className="px-6 py-4">
-                          <span className="font-mono text-sm font-semibold text-[#8b6f47]">
-                            {display.displayId}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-sm font-semibold text-[#8b6f47]">
+                              {display.displayId}
+                            </span>
+                            <button
+                              onClick={() =>
+                                handleCopyDisplayId(display.displayId)
+                              }
+                              className="p-1 hover:bg-[#f5f0e8] rounded transition"
+                              title="Copy Display ID">
+                              {copiedId === display.displayId ? (
+                                <Check
+                                  size={16}
+                                  weight="bold"
+                                  className="text-green-600"
+                                />
+                              ) : (
+                                <Copy
+                                  size={16}
+                                  weight="bold"
+                                  className="text-gray-400 hover:text-[#8b6f47]"
+                                />
+                              )}
+                            </button>
+                          </div>
                         </td>
                         <td className="px-6 py-4">
                           <span className="text-black font-medium">

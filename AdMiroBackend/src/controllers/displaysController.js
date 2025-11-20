@@ -1,6 +1,7 @@
 import Display from "../models/Display.js";
 import DisplayConnectionRequest from "../models/DisplayConnectionRequest.js";
 import { v4 as uuidv4 } from "uuid";
+import bcrypt from "bcryptjs";
 import {
   formatSuccessResponse,
   formatErrorResponse,
@@ -447,7 +448,14 @@ const deleteDisplay = async (req, res) => {
  */
 const registerDisplayDevice = async (req, res) => {
   try {
-    const { displayName, location, resolution, browserInfo } = req.body;
+    const {
+      displayName,
+      location,
+      resolution,
+      browserInfo,
+      displayId: customDisplayId,
+      password,
+    } = req.body;
 
     // Validation
     if (!displayName || !location) {
@@ -470,11 +478,62 @@ const registerDisplayDevice = async (req, res) => {
         .json(formatErrorResponse("Location must be at least 2 characters."));
     }
 
-    // Generate unique displayId
-    let displayId = `DISP-${Date.now()}-${Math.random()
-      .toString(36)
-      .substr(2, 9)
-      .toUpperCase()}`;
+    // Password validation if provided
+    let hashedPassword = null;
+    if (password) {
+      if (password.length < 4) {
+        return res
+          .status(400)
+          .json(formatErrorResponse("Password must be at least 4 characters."));
+      }
+      if (password.length > 50) {
+        return res
+          .status(400)
+          .json(formatErrorResponse("Password must not exceed 50 characters."));
+      }
+      // Hash the password
+      hashedPassword = await bcrypt.hash(password, 10);
+    }
+
+    // Use custom displayId if provided and valid, otherwise generate one
+    let displayId;
+    if (customDisplayId && customDisplayId.trim()) {
+      // Validate custom displayId
+      if (customDisplayId.length < 3) {
+        return res
+          .status(400)
+          .json(
+            formatErrorResponse("Display ID must be at least 3 characters.")
+          );
+      }
+      if (customDisplayId.length > 30) {
+        return res
+          .status(400)
+          .json(
+            formatErrorResponse("Display ID must not exceed 30 characters.")
+          );
+      }
+      // Check if custom displayId already exists
+      const existingDisplay = await Display.findOne({
+        displayId: customDisplayId,
+      });
+      if (existingDisplay) {
+        return res
+          .status(400)
+          .json(
+            formatErrorResponse(
+              "Display ID already exists. Choose a different one."
+            )
+          );
+      }
+      displayId = customDisplayId.trim();
+    } else {
+      // Generate unique displayId
+      displayId = `DISP-${Date.now()}-${Math.random()
+        .toString(36)
+        .substr(2, 9)
+        .toUpperCase()}`;
+    }
 
     // Generate connection token
     const connectionToken = uuidv4();
@@ -489,6 +548,7 @@ const registerDisplayDevice = async (req, res) => {
       assignedAdmin: null, // No admin until approval
       resolution: resolution || { width: 1920, height: 1080 },
       connectionToken,
+      password: hashedPassword,
       isConnected: false,
       firmwareVersion: browserInfo?.browserVersion || "Web",
     });
@@ -695,30 +755,38 @@ const reportDisplayStatus = async (req, res) => {
  */
 const loginDisplay = async (req, res) => {
   try {
-    const { displayId, connectionToken } = req.body;
+    const { displayId, password } = req.body;
 
-    if (!displayId || !connectionToken) {
+    if (!displayId || !password) {
       return res
         .status(400)
-        .json(
-          formatErrorResponse("Display ID and connection token are required.")
-        );
+        .json(formatErrorResponse("Display ID and password are required."));
     }
 
-    // Find display by displayId and connectionToken
-    const display = await Display.findOne({
-      displayId,
-      connectionToken,
-    });
+    // Find display by displayId
+    const display = await Display.findOne({ displayId });
 
     if (!display) {
       return res
         .status(404)
+        .json(formatErrorResponse("Display not found. Invalid Display ID."));
+    }
+
+    // Check if display has a password set
+    if (!display.password) {
+      return res
+        .status(400)
         .json(
           formatErrorResponse(
-            "Display not found. Invalid displayId or connection token."
+            "This display does not have password authentication enabled. Please use your connection token instead."
           )
         );
+    }
+
+    // Verify password
+    const isPasswordValid = await bcrypt.compare(password, display.password);
+    if (!isPasswordValid) {
+      return res.status(401).json(formatErrorResponse("Invalid password."));
     }
 
     console.log("✅ Display login successful:", displayId);

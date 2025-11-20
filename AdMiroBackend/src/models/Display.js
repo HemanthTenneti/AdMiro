@@ -73,6 +73,10 @@ const displaySchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    password: {
+      type: String,
+      default: null, // For password-based login
+    },
     isConnected: {
       type: Boolean,
       default: false,

@@ -62,15 +62,15 @@ router.post("/", verifyToken, createDisplay);
 /**
  * POST /api/displays/register-self
  * Register a browser-based display device (no auth required)
- * Body: { displayName, location, resolution?, browserInfo? }
+ * Body: { displayName, location, displayId?, password?, resolution?, browserInfo? }
  */
 router.post("/register-self", registerDisplayDevice);
 
 /**
  * POST /api/displays/login-display
- * Login to a registered display using displayId and connectionToken
+ * Login to a registered display using displayId and password
  * Auth: Not required
- * Body: { displayId, connectionToken }
+ * Body: { displayId, password }
  */
 router.post("/login-display", loginDisplay);
 

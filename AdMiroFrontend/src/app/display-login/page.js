@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import axiosInstance from "@/lib/axiosConfig";
-import { ArrowLeft, CircleNotch } from "phosphor-react";
+import { ArrowLeft, CircleNotch, Monitor } from "phosphor-react";
 import gsap from "gsap";
 
 export default function DisplayLoginPage() {
@@ -17,7 +17,7 @@ export default function DisplayLoginPage() {
 
   const [formData, setFormData] = useState({
     displayId: "",
-    connectionToken: "",
+    password: "",
   });
 
   const [errors, setErrors] = useState({});
@@ -70,8 +70,8 @@ export default function DisplayLoginPage() {
       newErrors.displayId = "Display ID is required.";
     }
 
-    if (!formData.connectionToken.trim()) {
-      newErrors.connectionToken = "Connection token is required.";
+    if (!formData.password.trim()) {
+      newErrors.password = "Password is required.";
     }
 
     setErrors(newErrors);
@@ -93,7 +93,7 @@ export default function DisplayLoginPage() {
 
       const response = await axiosInstance.post("/api/displays/login-display", {
         displayId: formData.displayId.trim(),
-        connectionToken: formData.connectionToken.trim(),
+        password: formData.password.trim(),
       });
 
       console.log("✅ Display authenticated:", response.data);
@@ -176,7 +176,7 @@ export default function DisplayLoginPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-blue-500 rounded-full mx-auto mb-4 flex items-center justify-center">
-            <span className="text-white text-2xl font-bold">🔌</span>
+            <Monitor size={32} weight="bold" className="text-white" />
           </div>
           <h1 className="text-3xl font-bold text-black mb-2">Display Login</h1>
           <p className="text-gray-600">
@@ -205,7 +205,7 @@ export default function DisplayLoginPage() {
               name="displayId"
               value={formData.displayId}
               onChange={handleInputChange}
-              placeholder="e.g., DISP-1234567890-ABC"
+              placeholder="e.g., DISP-LOB123"
               className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition font-mono text-sm ${
                 errors.displayId ? "border-red-500" : "border-gray-300"
               }`}
@@ -214,32 +214,30 @@ export default function DisplayLoginPage() {
               <p className="text-sm text-red-500 mt-1">{errors.displayId}</p>
             )}
             <p className="text-xs text-gray-500 mt-2">
-              Find this in your initial registration confirmation
+              The Display ID you created during registration
             </p>
           </div>
 
-          {/* Connection Token */}
+          {/* Password */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Connection Token <span className="text-red-500">*</span>
+              Password <span className="text-red-500">*</span>
             </label>
             <input
-              type="text"
-              name="connectionToken"
-              value={formData.connectionToken}
+              type="password"
+              name="password"
+              value={formData.password}
               onChange={handleInputChange}
-              placeholder="Paste your connection token"
-              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition font-mono text-sm ${
-                errors.connectionToken ? "border-red-500" : "border-gray-300"
+              placeholder="Enter your password"
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
+                errors.password ? "border-red-500" : "border-gray-300"
               }`}
             />
-            {errors.connectionToken && (
-              <p className="text-sm text-red-500 mt-1">
-                {errors.connectionToken}
-              </p>
+            {errors.password && (
+              <p className="text-sm text-red-500 mt-1">{errors.password}</p>
             )}
             <p className="text-xs text-gray-500 mt-2">
-              This was provided when you registered the display
+              The password you set during display registration
             </p>
           </div>
 
@@ -272,20 +270,21 @@ export default function DisplayLoginPage() {
         {/* Register New Display */}
         <Link
           href="/display-register"
-          className="w-full block px-6 py-3 border-2 border-[#8b6f47] hover:bg-[#8b6f47] hover:text-white text-[#8b6f47] font-semibold rounded-lg transition text-center mb-4">
-          📺 Register New Display
+          className="w-full px-6 py-3 border-2 border-[#8b6f47] text-[#8b6f47] font-semibold rounded-lg hover:bg-[#f5f0e8] transition text-center mb-4 flex items-center justify-center gap-2">
+          <Monitor size={18} weight="bold" />
+          Register New Display
         </Link>
 
         {/* Info Section */}
         <div className="bg-blue-50 rounded-2xl border border-blue-200 p-6">
           <h3 className="font-semibold text-blue-900 mb-3">
-            💡 Already have Display Credentials?
+            💡 Easy Password Login
           </h3>
           <ul className="space-y-2 text-sm text-blue-800">
-            <li>✅ Use your Display ID and Connection Token</li>
+            <li>✅ Use your Display ID and password to log in</li>
+            <li>✅ No need to copy long connection tokens</li>
             <li>✅ Stay logged in across browser refreshes</li>
             <li>✅ Display mode persists when you leave and return</li>
-            <li>✅ No need to re-register every time</li>
           </ul>
         </div>
 

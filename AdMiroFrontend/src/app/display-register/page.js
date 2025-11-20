@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import axiosInstance from "@/lib/axiosConfig";
-import { CircleNotch, Check, ArrowLeft, Clock } from "phosphor-react";
+import { CircleNotch, Check, ArrowLeft, Clock, Monitor } from "phosphor-react";
 import gsap from "gsap";
 
 export default function DisplayRegisterPage() {
@@ -21,6 +21,8 @@ export default function DisplayRegisterPage() {
   const [formData, setFormData] = useState({
     displayName: "",
     location: "",
+    displayId: "",
+    password: "",
   });
 
   const [errors, setErrors] = useState({});
@@ -109,6 +111,24 @@ export default function DisplayRegisterPage() {
       newErrors.location = "Location must not exceed 50 characters.";
     }
 
+    // Display ID is optional but if provided, validate it
+    if (formData.displayId.trim()) {
+      if (formData.displayId.length < 3) {
+        newErrors.displayId = "Display ID must be at least 3 characters.";
+      } else if (formData.displayId.length > 30) {
+        newErrors.displayId = "Display ID must not exceed 30 characters.";
+      }
+    }
+
+    // Password is optional but if provided, validate it
+    if (formData.password.trim()) {
+      if (formData.password.length < 4) {
+        newErrors.password = "Password must be at least 4 characters.";
+      } else if (formData.password.length > 50) {
+        newErrors.password = "Password must not exceed 50 characters.";
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -158,6 +178,12 @@ export default function DisplayRegisterPage() {
       const response = await axiosInstance.post("/api/displays/register-self", {
         displayName: formData.displayName.trim(),
         location: formData.location.trim(),
+        ...(formData.displayId.trim() && {
+          displayId: formData.displayId.trim(),
+        }),
+        ...(formData.password.trim() && {
+          password: formData.password.trim(),
+        }),
         resolution: deviceInfo.resolution,
         browserInfo: { browserVersion: deviceInfo.browserVersion },
       });
@@ -315,7 +341,7 @@ export default function DisplayRegisterPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-[#8b6f47] rounded-full mx-auto mb-4 flex items-center justify-center">
-            <span className="text-white text-2xl font-bold">📺</span>
+            <Monitor size={32} weight="bold" className="text-white" />
           </div>
           <h1 className="text-3xl font-bold text-black mb-2">
             Register Display
@@ -336,6 +362,32 @@ export default function DisplayRegisterPage() {
         <form
           onSubmit={handleSubmit}
           className="bg-white rounded-2xl border-2 border-[#e5e5e5] p-8 space-y-6">
+          {/* Display ID */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Display ID{" "}
+              <span className="text-gray-500 text-xs">(Optional)</span>
+            </label>
+            <input
+              type="text"
+              name="displayId"
+              value={formData.displayId}
+              onChange={handleInputChange}
+              placeholder="e.g., DISP-LOBBY"
+              maxLength={30}
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b6f47] focus:border-transparent transition ${
+                errors.displayId ? "border-red-500" : "border-gray-300"
+              }`}
+            />
+            {errors.displayId && (
+              <p className="text-sm text-red-500 mt-1">{errors.displayId}</p>
+            )}
+            <p className="text-xs text-gray-500 mt-1">
+              Create a short ID (3-30 characters) like DISP-LOBBY, or leave
+              blank for auto-generated
+            </p>
+          </div>
+
           {/* Display Name */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -376,6 +428,30 @@ export default function DisplayRegisterPage() {
             {errors.location && (
               <p className="text-sm text-red-500 mt-1">{errors.location}</p>
             )}
+          </div>
+
+          {/* Password */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Password <span className="text-gray-500 text-xs">(Optional)</span>
+            </label>
+            <input
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleInputChange}
+              placeholder="Create a password for easy login (4-50 characters)"
+              maxLength={50}
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b6f47] focus:border-transparent transition ${
+                errors.password ? "border-red-500" : "border-gray-300"
+              }`}
+            />
+            {errors.password && (
+              <p className="text-sm text-red-500 mt-1">{errors.password}</p>
+            )}
+            <p className="text-xs text-gray-500 mt-1">
+              Leave blank to use connection token for login, or set a password for easier access
+            </p>
           </div>
 
           {/* Device Info */}
