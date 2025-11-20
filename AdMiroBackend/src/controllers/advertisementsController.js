@@ -66,7 +66,7 @@ const createAdvertisement = async (req, res) => {
 
     // Handle file upload vs link
     if (req.file) {
-      // File upload path
+      // File upload path - convert buffer to base64 data URL
       // Validate file size (100MB limit)
       const maxFileSize = 100 * 1024 * 1024;
       if (req.file.size > maxFileSize) {
@@ -99,8 +99,14 @@ const createAdvertisement = async (req, res) => {
           );
       }
 
-      finalMediaUrl = `/uploads/media/${req.file.filename}`;
+      // Convert buffer to base64 data URL
+      const base64Data = req.file.buffer.toString("base64");
+      finalMediaUrl = `data:${req.file.mimetype};base64,${base64Data}`;
       fileSize = req.file.size;
+
+      console.log(
+        `✅ File uploaded and encoded: ${req.file.originalname} (${fileSize} bytes)`
+      );
     } else {
       // Link path - validate URL
       if (!mediaUrl || typeof mediaUrl !== "string") {

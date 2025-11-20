@@ -1,43 +1,8 @@
 import multer from "multer";
 import path from "path";
-import fs from "fs";
 
-// Create uploads directory if it doesn't exist
-const uploadsDir = path.join(process.cwd(), "uploads", "media");
-const profilePicsDir = path.join(process.cwd(), "uploads", "profile");
-
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-if (!fs.existsSync(profilePicsDir)) {
-  fs.mkdirSync(profilePicsDir, { recursive: true });
-}
-
-// Store media files on disk
-const mediaStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    const timestamp = Date.now();
-    const ext = path.extname(file.originalname);
-    const name = path.basename(file.originalname, ext);
-    cb(null, `${name}-${timestamp}${ext}`);
-  },
-});
-
-// Store profile pictures on disk
-const profileStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, profilePicsDir);
-  },
-  filename: (req, file, cb) => {
-    const timestamp = Date.now();
-    const ext = path.extname(file.originalname);
-    cb(null, `profile-${timestamp}${ext}`);
-  },
-});
+// Store files in memory as base64 - no disk storage needed
+const memoryStorage = multer.memoryStorage();
 
 // File filter to only accept images and videos
 const fileFilter = (req, file, cb) => {
@@ -61,9 +26,9 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Configure multer for media uploads
+// Configure multer for media uploads - stores in memory
 export const upload = multer({
-  storage: mediaStorage,
+  storage: memoryStorage,
   fileFilter,
   limits: {
     fileSize: 100 * 1024 * 1024, // 100MB limit for media
@@ -87,7 +52,7 @@ const profilePictureFilter = (req, file, cb) => {
 };
 
 export const uploadProfilePicture = multer({
-  storage: profileStorage,
+  storage: memoryStorage,
   fileFilter: profilePictureFilter,
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB limit for profile pictures

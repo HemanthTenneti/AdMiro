@@ -213,22 +213,9 @@ export const uploadProfilePicture = async (req, res) => {
       });
     }
 
-    // Delete old profile picture from S3 if it exists
-    if (user.profilePicture) {
-      try {
-        await deleteFromS3(user.profilePicture);
-      } catch (err) {
-        console.error("Error deleting old profile picture:", err);
-        // Continue even if deletion fails
-      }
-    }
-
-    // Upload new profile picture to S3
-    const imageUrl = await uploadToS3(
-      req.file.buffer,
-      `profile-${req.user.userId}-${Date.now()}`,
-      req.file.mimetype
-    );
+    // Convert profile picture to base64 data URL
+    const base64Data = req.file.buffer.toString("base64");
+    const imageUrl = `data:${req.file.mimetype};base64,${base64Data}`;
 
     // Update user with new profile picture URL
     user.profilePicture = imageUrl;
