@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
+import { toast } from "sonner";
 import axiosInstance from "@/lib/axiosConfig";
 import DashboardLayout from "@/components/DashboardLayout";
 import {
@@ -24,6 +25,7 @@ export default function DisplayDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   // Wait for client mount and params to be available
@@ -79,14 +81,6 @@ export default function DisplayDetailPage() {
   };
 
   const handleDelete = async () => {
-    if (
-      !confirm(
-        "Are you sure you want to delete this display? This action cannot be undone."
-      )
-    ) {
-      return;
-    }
-
     try {
       setDeleteLoading(true);
       console.log("🗑️ Deleting display:", displayId);
@@ -94,6 +88,7 @@ export default function DisplayDetailPage() {
       await axiosInstance.delete(`/api/displays/${displayId}`);
       console.log("✅ Display deleted");
 
+      toast.success("Display deleted successfully");
       router.push("/dashboard/displays");
     } catch (err) {
       console.error("❌ Error deleting display:", err);
@@ -241,7 +236,7 @@ export default function DisplayDetailPage() {
                     <button
                       onClick={() => {
                         navigator.clipboard.writeText(display.connectionToken);
-                        alert("Token copied to clipboard!");
+                        toast.success("Token copied to clipboard!");
                       }}
                       className="px-4 py-2 bg-[#8b6f47] hover:bg-[#7a5f3a] text-white font-semibold rounded-lg transition whitespace-nowrap">
                       Copy
@@ -299,7 +294,7 @@ export default function DisplayDetailPage() {
                 </Link>
 
                 <button
-                  onClick={handleDelete}
+                  onClick={() => setDeleteConfirm(true)}
                   disabled={deleteLoading}
                   className="flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition disabled:opacity-50">
                   {deleteLoading ? (
@@ -323,6 +318,38 @@ export default function DisplayDetailPage() {
           </div>
         </div>
       </main>
+
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Delete Display
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete this display? This action cannot
+              be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setDeleteConfirm(false)}
+                disabled={deleteLoading}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition disabled:opacity-50">
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleteLoading}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition disabled:opacity-50 flex items-center gap-2">
+                {deleteLoading && (
+                  <CircleNotch size={16} className="animate-spin" />
+                )}
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

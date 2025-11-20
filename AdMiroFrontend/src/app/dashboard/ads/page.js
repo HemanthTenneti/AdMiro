@@ -24,6 +24,7 @@ export default function AdvertisementsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
   // Filters and sorting
   const [searchTerm, setSearchTerm] = useState("");
@@ -102,10 +103,6 @@ export default function AdvertisementsPage() {
   };
 
   const handleDelete = async adId => {
-    if (!confirm("Are you sure you want to delete this advertisement?")) {
-      return;
-    }
-
     try {
       setDeleteLoading(adId);
       console.log("🗑️ Deleting advertisement:", adId);
@@ -116,6 +113,7 @@ export default function AdvertisementsPage() {
       // Remove from local state
       setAdvertisements(advertisements.filter(a => a._id !== adId));
       toast.success("Advertisement deleted successfully!");
+      setDeleteConfirmId(null);
     } catch (err) {
       console.error("❌ Error deleting advertisement:", err);
       const errorMessage =
@@ -420,7 +418,7 @@ export default function AdvertisementsPage() {
                         Edit
                       </button>
                       <button
-                        onClick={() => handleDelete(ad._id)}
+                        onClick={() => setDeleteConfirmId(ad._id)}
                         disabled={deleteLoading === ad._id}
                         className="flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition disabled:opacity-50">
                         {deleteLoading === ad._id ? (
@@ -491,6 +489,38 @@ export default function AdvertisementsPage() {
           )}
         </div>
       </main>
+
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Delete Advertisement
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete this advertisement? This action
+              cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setDeleteConfirmId(null)}
+                disabled={deleteLoading === deleteConfirmId}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition disabled:opacity-50">
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDelete(deleteConfirmId)}
+                disabled={deleteLoading === deleteConfirmId}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition disabled:opacity-50 flex items-center gap-2">
+                {deleteLoading === deleteConfirmId && (
+                  <CircleNotch size={16} className="animate-spin" />
+                )}
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

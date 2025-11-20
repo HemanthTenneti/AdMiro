@@ -29,6 +29,7 @@ export default function DisplaysPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [copiedId, setCopiedId] = useState(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const itemsPerPage = 10;
 
   // Check auth and fetch displays
@@ -81,10 +82,6 @@ export default function DisplaysPage() {
   };
 
   const handleDelete = async displayId => {
-    if (!confirm("Are you sure you want to delete this display?")) {
-      return;
-    }
-
     try {
       setDeleteLoading(displayId);
       console.log("🗑️ Deleting display:", displayId);
@@ -95,6 +92,7 @@ export default function DisplaysPage() {
       // Remove from local state
       setDisplays(displays.filter(d => d._id !== displayId));
       toast.success("Display deleted successfully!");
+      setDeleteConfirmId(null);
     } catch (err) {
       console.error("❌ Error deleting display:", err);
       const errorMessage =
@@ -380,7 +378,7 @@ export default function DisplaysPage() {
                               <PencilSimple size={18} weight="bold" />
                             </button>
                             <button
-                              onClick={() => handleDelete(display._id)}
+                              onClick={() => setDeleteConfirmId(display._id)}
                               disabled={deleteLoading === display._id}
                               className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition disabled:opacity-50"
                               title="Delete display">
@@ -458,6 +456,38 @@ export default function DisplaysPage() {
           )}
         </div>
       </main>
+
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Delete Display
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete this display? This action cannot
+              be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setDeleteConfirmId(null)}
+                disabled={deleteLoading === deleteConfirmId}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition disabled:opacity-50">
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDelete(deleteConfirmId)}
+                disabled={deleteLoading === deleteConfirmId}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition disabled:opacity-50 flex items-center gap-2">
+                {deleteLoading === deleteConfirmId && (
+                  <CircleNotch size={16} className="animate-spin" />
+                )}
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

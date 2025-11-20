@@ -16,6 +16,7 @@ export default function LoopsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
   // Check auth and fetch loops
   useEffect(() => {
@@ -62,10 +63,6 @@ export default function LoopsPage() {
   };
 
   const handleDelete = async loopId => {
-    if (!confirm("Are you sure you want to delete this loop?")) {
-      return;
-    }
-
     try {
       setDeleteLoading(loopId);
       console.log("🗑️ Deleting loop:", loopId);
@@ -76,6 +73,7 @@ export default function LoopsPage() {
       // Remove from local state
       setLoops(loops.filter(l => l._id !== loopId));
       toast.success("Loop deleted successfully!");
+      setDeleteConfirmId(null);
     } catch (err) {
       console.error("❌ Error deleting loop:", err);
       const errorMessage =
@@ -245,7 +243,7 @@ export default function LoopsPage() {
                               <PencilSimple size={18} weight="bold" />
                             </button>
                             <button
-                              onClick={() => handleDelete(loop._id)}
+                              onClick={() => setDeleteConfirmId(loop._id)}
                               disabled={deleteLoading === loop._id}
                               className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition disabled:opacity-50"
                               title="Delete loop">
@@ -280,6 +278,38 @@ export default function LoopsPage() {
           )}
         </div>
       </main>
+
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Delete Loop
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete this loop? This action cannot be
+              undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setDeleteConfirmId(null)}
+                disabled={deleteLoading === deleteConfirmId}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition disabled:opacity-50">
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDelete(deleteConfirmId)}
+                disabled={deleteLoading === deleteConfirmId}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition disabled:opacity-50 flex items-center gap-2">
+                {deleteLoading === deleteConfirmId && (
+                  <CircleNotch size={16} className="animate-spin" />
+                )}
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

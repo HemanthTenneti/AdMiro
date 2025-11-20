@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { toast } from "sonner";
 import axiosInstance from "@/lib/axiosConfig";
 import DashboardLayout from "@/components/DashboardLayout";
 import { ArrowLeft, Trash, Funnel } from "phosphor-react";
@@ -15,6 +16,7 @@ export default function LogsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [pageSize] = useState(10);
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
   // Filters
   const [actionFilter, setActionFilter] = useState("");
@@ -59,15 +61,15 @@ export default function LogsPage() {
   }, [currentPage, actionFilter, entityTypeFilter, pageSize]);
 
   const handleDeleteLog = async logId => {
-    if (!confirm("Are you sure you want to delete this log?")) return;
-
     try {
       await axiosInstance.delete(`/api/logs/${logId}`);
       setLogs(logs.filter(log => log._id !== logId));
       setTotal(total - 1);
+      toast.success("Log deleted successfully");
+      setDeleteConfirmId(null);
     } catch (error) {
       console.error("Failed to delete log:", error);
-      alert("Failed to delete log");
+      toast.error("Failed to delete log");
     }
   };
 
@@ -303,7 +305,7 @@ export default function LogsPage() {
                     </td>
                     <td className="px-6 py-4 text-center">
                       <button
-                        onClick={() => handleDeleteLog(log._id)}
+                        onClick={() => setDeleteConfirmId(log._id)}
                         className="p-2 hover:bg-red-100 rounded-lg transition text-gray-600 hover:text-red-600"
                         title="Delete log">
                         <Trash size={18} />
@@ -339,6 +341,33 @@ export default function LogsPage() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Delete Log
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete this log? This action cannot be
+              undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setDeleteConfirmId(null)}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition">
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDeleteLog(deleteConfirmId)}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition">
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }
