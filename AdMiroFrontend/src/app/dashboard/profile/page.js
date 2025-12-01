@@ -13,6 +13,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("profile");
+  const [isGoogleOAuth, setIsGoogleOAuth] = useState(false);
 
   // Profile form
   const [firstName, setFirstName] = useState("");
@@ -54,6 +55,8 @@ export default function ProfilePage() {
       setLastName(response.data.data.lastName || "");
       setNewEmail(response.data.data.email || "");
       setProfilePicture(response.data.data.profilePicture);
+      // Check if user registered via Google OAuth
+      setIsGoogleOAuth(response.data.data.googleId ? true : false);
     } catch (error) {
       console.error("Error fetching profile:", error);
       toast.error("Failed to load profile");
@@ -118,13 +121,19 @@ export default function ProfilePage() {
   const handleChangePassword = async e => {
     e.preventDefault();
 
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      toast.error("All fields are required");
+    // Validate new passwords first (same for all users)
+    if (!newPassword || newPassword.trim() === "") {
+      toast.error("New password is required");
+      return;
+    }
+
+    if (!confirmPassword || confirmPassword.trim() === "") {
+      toast.error("Password confirmation is required");
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      toast.error("New passwords do not match");
+      toast.error("Passwords do not match");
       return;
     }
 
@@ -133,10 +142,23 @@ export default function ProfilePage() {
       return;
     }
 
+    // Current password is required ONLY if user is a pure OAuth user (hasn't set a password yet)
+    // Once they set a password, they can log in with either OAuth or password, so they need current password to change it
+    if (isGoogleOAuth) {
+      // Pure OAuth user setting password for the first time - don't need current password
+    } else {
+      // User has already set a password (either from start or after OAuth registration)
+      // They need current password to change it
+      if (!currentPassword || currentPassword.trim() === "") {
+        toast.error("Current password is required");
+        return;
+      }
+    }
+
     try {
       setSaving(true);
       await axiosInstance.put("/api/profile/password", {
-        currentPassword,
+        currentPassword: isGoogleOAuth ? undefined : currentPassword,
         newPassword,
         confirmPassword,
       });
@@ -144,6 +166,13 @@ export default function ProfilePage() {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
+
+      // After successful password change, if user was pure OAuth user, treat them as dual-auth user
+      // This means they now have a password and must provide current password for future changes
+      if (isGoogleOAuth) {
+        setIsGoogleOAuth(false);
+      }
+
       toast.success("Password changed successfully!");
     } catch (error) {
       console.error("Error changing password:", error);
@@ -435,36 +464,48 @@ export default function ProfilePage() {
                     Change Password
                   </h2>
 
-                  <div className="space-y-6">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Current Password
-                      </label>
-                      <div className="relative">
-                        <input
-                          type={showPasswords.current ? "text" : "password"}
-                          value={currentPassword}
-                          onChange={e => setCurrentPassword(e.target.value)}
-                          placeholder="Enter your current password"
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b6f47] focus:border-transparent"
-                        />
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setShowPasswords(prev => ({
-                              ...prev,
-                              current: !prev.current,
-                            }))
-                          }
-                          className="absolute right-4 top-3 text-gray-500 hover:text-gray-700">
-                          {showPasswords.current ? (
-                            <EyeSlash size={20} weight="bold" />
-                          ) : (
-                            <Eye size={20} weight="bold" />
-                          )}
-                        </button>
-                      </div>
+                  {isGoogleOAuth && (
+                    <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm text-blue-800">
+                        <strong>Note:</strong> Since you signed up with Google,
+                        you can set a password here. After that, you'll be able
+                        to log in with either Google or your password.
+                      </p>
                     </div>
+                  )}
+
+                  <div className="space-y-6">
+                    {!isGoogleOAuth && (
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Current Password
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showPasswords.current ? "text" : "password"}
+                            value={currentPassword}
+                            onChange={e => setCurrentPassword(e.target.value)}
+                            placeholder="Enter your current password"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b6f47] focus:border-transparent"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setShowPasswords(prev => ({
+                                ...prev,
+                                current: !prev.current,
+                              }))
+                            }
+                            className="absolute right-4 top-3 text-gray-500 hover:text-gray-700">
+                            {showPasswords.current ? (
+                              <EyeSlash size={20} weight="bold" />
+                            ) : (
+                              <Eye size={20} weight="bold" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    )}
 
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">

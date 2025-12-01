@@ -20,6 +20,10 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [totalDisplays, setTotalDisplays] = useState(0);
   const [displaysLoading, setDisplaysLoading] = useState(true);
+  const [totalAds, setTotalAds] = useState(0);
+  const [adsLoading, setAdsLoading] = useState(true);
+  const [totalLoops, setTotalLoops] = useState(0);
+  const [loopsLoading, setLoopsLoading] = useState(true);
   const [logs, setLogs] = useState([]);
   const [logsLoading, setLogsLoading] = useState(true);
 
@@ -64,6 +68,36 @@ export default function Dashboard() {
       }
     };
 
+    const fetchAds = async () => {
+      try {
+        setAdsLoading(true);
+        const response = await axiosInstance.get("/api/ads?limit=1");
+        // The response structure is: { success, message, data: { advertisements, pagination: { total } } }
+        const total = response.data?.data?.pagination?.total || 0;
+        setTotalAds(total);
+      } catch (error) {
+        console.error("Failed to fetch ads count:", error);
+        setTotalAds(0);
+      } finally {
+        setAdsLoading(false);
+      }
+    };
+
+    const fetchLoops = async () => {
+      try {
+        setLoopsLoading(true);
+        const response = await axiosInstance.get("/api/loops?limit=1");
+        // The response structure is: { success, message, data: { loops, pagination: { total } } }
+        const total = response.data?.data?.pagination?.total || 0;
+        setTotalLoops(total);
+      } catch (error) {
+        console.error("Failed to fetch loops count:", error);
+        setTotalLoops(0);
+      } finally {
+        setLoopsLoading(false);
+      }
+    };
+
     const fetchLogs = async () => {
       try {
         setLogsLoading(true);
@@ -80,6 +114,8 @@ export default function Dashboard() {
 
     if (!loading) {
       fetchDisplays();
+      fetchAds();
+      fetchLoops();
       fetchLogs();
     }
   }, [loading]);
@@ -102,14 +138,14 @@ export default function Dashboard() {
     },
     {
       label: "Active Ads",
-      value: "—",
+      value: adsLoading ? "..." : totalAds.toString(),
       icon: Image,
       bgColor: "#e9d5ff",
       iconColor: "#a855f7",
     },
     {
-      label: "Total Loops",
-      value: "—",
+      label: "Total Playlists",
+      value: loopsLoading ? "..." : totalLoops.toString(),
       icon: ChartLine,
       bgColor: "#fef3c7",
       iconColor: "#f59e0b",

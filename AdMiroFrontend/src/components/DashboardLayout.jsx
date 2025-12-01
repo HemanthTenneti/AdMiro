@@ -15,6 +15,7 @@ import {
   X,
   Clock,
   Play,
+  User,
 } from "phosphor-react";
 
 export default function DashboardLayout({ children }) {
@@ -63,8 +64,7 @@ export default function DashboardLayout({ children }) {
     { label: "Display Loops", href: "/dashboard/loops", icon: Play },
     { label: "All Logs", href: "/dashboard/logs", icon: Clock },
     { label: "Analytics", href: "/dashboard/analytics", icon: ChartLine },
-    { label: "Profile", href: "/dashboard/profile", icon: Gear },
-    { label: "Settings", href: "/dashboard/settings", icon: Gear },
+    { label: "Profile", href: "/dashboard/profile", icon: User },
   ];
 
   return (

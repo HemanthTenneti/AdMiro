@@ -127,11 +127,11 @@ export const changeUserPassword = async (req, res) => {
   try {
     const { currentPassword, newPassword, confirmPassword } = req.body;
 
-    // Validate input
-    if (!currentPassword || !newPassword || !confirmPassword) {
+    // Validate new passwords
+    if (!newPassword || !confirmPassword) {
       return res.status(400).json({
         success: false,
-        message: "All fields are required",
+        message: "New password and confirmation are required",
       });
     }
 
@@ -159,11 +159,25 @@ export const changeUserPassword = async (req, res) => {
       });
     }
 
-    // Check if user has a password (OAuth users might not)
+    // For OAuth users (no password set), allow setting password without verification
     if (!user.password) {
+      // OAuth user setting a password for the first time
+      user.password = newPassword;
+      // Don't clear googleId - user can still log in with Google OR password
+      await user.save();
+
+      return res.status(200).json({
+        success: true,
+        message:
+          "Password set successfully. You can now log in with either Google or your password.",
+      });
+    }
+
+    // For regular users with existing password, require current password verification
+    if (!currentPassword) {
       return res.status(400).json({
         success: false,
-        message: "You cannot change password for OAuth accounts",
+        message: "Current password is required",
       });
     }
 

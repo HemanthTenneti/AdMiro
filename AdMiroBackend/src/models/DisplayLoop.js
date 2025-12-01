@@ -32,8 +32,13 @@ const displayLoopSchema = new mongoose.Schema(
     ],
     rotationType: {
       type: String,
-      enum: ["sequential", "random", "scheduled"],
+      enum: ["sequential", "random"],
       default: "sequential",
+    },
+    displayLayout: {
+      type: String,
+      enum: ["fullscreen", "masonry"],
+      default: "fullscreen",
     },
     totalDuration: {
       type: Number, // in seconds - sum of all ad durations

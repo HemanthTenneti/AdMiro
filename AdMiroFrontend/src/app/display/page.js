@@ -25,6 +25,7 @@ export default function DisplayPage() {
   const [ads, setAds] = useState([]);
   const [currentAd, setCurrentAd] = useState(null);
   const [timeRemaining, setTimeRemaining] = useState(0);
+  const [loopData, setLoopData] = useState(null);
   const [loginMode, setLoginMode] = useState(false);
   const [loginData, setLoginData] = useState({
     displayId: "",
@@ -38,6 +39,8 @@ export default function DisplayPage() {
   const timerRef = useRef(null);
   const currentDurationRef = useRef(0);
   const currentAdIdRef = useRef(null);
+  const hideButtonsTimerRef = useRef(null);
+  const [showNavigationButtons, setShowNavigationButtons] = useState(false);
 
   // Report status to backend
   const reportDisplayStatus = useCallback(async (token, status) => {
@@ -67,19 +70,27 @@ export default function DisplayPage() {
       const response = await axiosInstance.get(`/api/displays/loop/${token}`);
       console.log("✅ Display loop fetched:", response.data);
 
+      const loop = response.data.data.loop;
       const advertisements = response.data.data.advertisements || [];
 
       if (advertisements.length === 0) {
         setError("No advertisements assigned to this display");
         setAds([]);
         setCurrentAd(null);
+        setLoopData(null);
         return;
       }
 
+      setLoopData(loop);
       setAds(advertisements);
-      setCurrentAdIndex(0);
-      setCurrentAd(advertisements[0]);
-      setTimeRemaining(advertisements[0].duration);
+
+      // For fullscreen mode, start with first ad
+      // For masonry mode, we'll show all ads in grid
+      if (loop.displayLayout === "fullscreen") {
+        setCurrentAdIndex(0);
+        setCurrentAd(advertisements[0]);
+        setTimeRemaining(advertisements[0].duration);
+      }
       setError("");
     } catch (err) {
       console.error("❌ Error fetching display loop:", err);
@@ -124,14 +135,15 @@ export default function DisplayPage() {
     };
   }, [fetchAdsForDisplay, reportDisplayStatus]);
 
-  // Request fullscreen when display is active
+  // Request fullscreen when display is active (only for fullscreen layout)
   useEffect(() => {
     const requestFullscreen = async () => {
       try {
         if (
           containerRef.current &&
           document.fullscreenElement === null &&
-          displayId
+          displayId &&
+          loopData?.displayLayout === "fullscreen"
         ) {
           await containerRef.current.requestFullscreen().catch(() => {
             console.log("ℹ️ Fullscreen not available");
@@ -162,9 +174,58 @@ export default function DisplayPage() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [router]);
 
-  // Timer for ad rotation
+  // Handle mouse movement to show/hide navigation buttons
   useEffect(() => {
-    if (!currentAd || ads.length === 0) return;
+    const handleMouseMove = () => {
+      setShowNavigationButtons(true);
+
+      // Clear existing timer
+      if (hideButtonsTimerRef.current) {
+        clearTimeout(hideButtonsTimerRef.current);
+      }
+
+      // Set timer to hide buttons after 3 seconds of inactivity
+      hideButtonsTimerRef.current = setTimeout(() => {
+        setShowNavigationButtons(false);
+      }, 3000);
+    };
+
+    const handleMouseLeave = () => {
+      // Hide buttons immediately when mouse leaves the display area
+      setShowNavigationButtons(false);
+      if (hideButtonsTimerRef.current) {
+        clearTimeout(hideButtonsTimerRef.current);
+      }
+    };
+
+    // Add event listeners to the container
+    if (containerRef.current) {
+      containerRef.current.addEventListener("mousemove", handleMouseMove);
+      containerRef.current.addEventListener("mouseleave", handleMouseLeave);
+    }
+
+    return () => {
+      if (containerRef.current) {
+        containerRef.current.removeEventListener("mousemove", handleMouseMove);
+        containerRef.current.removeEventListener(
+          "mouseleave",
+          handleMouseLeave
+        );
+      }
+      if (hideButtonsTimerRef.current) {
+        clearTimeout(hideButtonsTimerRef.current);
+      }
+    };
+  }, []);
+
+  // Timer for ad rotation (only for fullscreen mode)
+  useEffect(() => {
+    if (
+      !currentAd ||
+      ads.length === 0 ||
+      loopData?.displayLayout !== "fullscreen"
+    )
+      return;
 
     // Clear any existing timer
     if (timerRef.current) {
@@ -184,7 +245,16 @@ export default function DisplayPage() {
       if (currentDurationRef.current <= 0) {
         clearInterval(timerRef.current);
         setCurrentAdIndex(prev => {
-          const nextIndex = (prev + 1) % ads.length;
+          let nextIndex;
+          if (loopData?.rotationType === "random") {
+            // Random rotation - pick any ad except current
+            do {
+              nextIndex = Math.floor(Math.random() * ads.length);
+            } while (ads.length > 1 && nextIndex === prev);
+          } else {
+            // Sequential rotation
+            nextIndex = (prev + 1) % ads.length;
+          }
           setCurrentAd(ads[nextIndex]);
           currentDurationRef.current = ads[nextIndex].duration;
           setTimeRemaining(ads[nextIndex].duration);
@@ -436,8 +506,50 @@ export default function DisplayPage() {
   return (
     <div
       ref={containerRef}
-      className="w-screen h-screen flex items-center justify-center bg-black overflow-hidden">
-      {currentAd ? (
+      className="w-screen h-screen bg-black overflow-hidden">
+      {loopData?.displayLayout === "masonry" ? (
+        // Masonry Layout - Using CSS Masonry
+        <div
+          className="w-full h-full overflow-auto bg-black p-0"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+            gridAutoRows: "auto",
+            gap: "0",
+            padding: "0",
+          }}>
+          {ads.map((ad, index) => (
+            <div
+              key={ad._id}
+              className="relative bg-black overflow-hidden flex items-center justify-center"
+              style={{ aspectRatio: "1" }}>
+              {ad.mediaType === "image" ? (
+                <Image
+                  src={ad.mediaUrl}
+                  alt={ad.adName}
+                  fill
+                  className="w-full h-full object-contain"
+                  onError={() => {
+                    console.error(`Failed to load image for ${ad.adName}`);
+                  }}
+                />
+              ) : (
+                <video
+                  src={ad.mediaUrl}
+                  autoPlay
+                  muted
+                  loop
+                  className="w-full h-full object-contain"
+                  onError={() => {
+                    console.error(`Failed to load video for ${ad.adName}`);
+                  }}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      ) : currentAd ? (
+        // Fullscreen Layout - Show one ad at a time
         <div className="relative w-full h-full flex items-center justify-center">
           {/* Ad Display Area */}
           {currentAd.mediaType === "image" ? (
@@ -468,10 +580,14 @@ export default function DisplayPage() {
           <button
             onClick={handlePreviousAd}
             disabled={ads.length <= 1}
-            className={`absolute left-4 top-1/2 -translate-y-1/2 z-40 p-3 rounded-lg transition ${
+            className={`absolute left-4 top-1/2 -translate-y-1/2 z-40 p-3 rounded-lg transition-all duration-300 ${
               ads.length <= 1
                 ? "bg-gray-500 bg-opacity-30 text-gray-400 cursor-not-allowed"
                 : "bg-black bg-opacity-40 hover:bg-opacity-60 text-white cursor-pointer"
+            } ${
+              showNavigationButtons
+                ? "opacity-100"
+                : "opacity-0 pointer-events-none"
             }`}
             title={ads.length <= 1 ? "Only one media" : "Previous media"}>
             <CaretLeft size={32} weight="bold" />
@@ -481,10 +597,14 @@ export default function DisplayPage() {
           <button
             onClick={handleNextAd}
             disabled={ads.length <= 1}
-            className={`absolute right-4 top-1/2 -translate-y-1/2 z-40 p-3 rounded-lg transition ${
+            className={`absolute right-4 top-1/2 -translate-y-1/2 z-40 p-3 rounded-lg transition-all duration-300 ${
               ads.length <= 1
                 ? "bg-gray-500 bg-opacity-30 text-gray-400 cursor-not-allowed"
                 : "bg-black bg-opacity-40 hover:bg-opacity-60 text-white cursor-pointer"
+            } ${
+              showNavigationButtons
+                ? "opacity-100"
+                : "opacity-0 pointer-events-none"
             }`}
             title={ads.length <= 1 ? "Only one media" : "Next media"}>
             <CaretRight size={32} weight="bold" />
@@ -555,6 +675,7 @@ export default function DisplayPage() {
           </div>
         </div>
       ) : (
+        // Error state
         <div className="w-full h-full flex items-center justify-center bg-black relative">
           <div className="text-center">
             <p className="text-red-500 text-2xl font-semibold mb-4">{error}</p>

@@ -27,6 +27,7 @@ export default function EditLoopPage() {
   const [loopName, setLoopName] = useState("");
   const [description, setDescription] = useState("");
   const [rotationType, setRotationType] = useState("sequential");
+  const [displayLayout, setDisplayLayout] = useState("fullscreen");
   const [displayName, setDisplayName] = useState("");
 
   useEffect(() => {
@@ -48,6 +49,7 @@ export default function EditLoopPage() {
         setLoopName(loop.loopName);
         setDescription(loop.description || "");
         setRotationType(loop.rotationType);
+        setDisplayLayout(loop.displayLayout || "fullscreen");
 
         const selectedAdvertisements = loop.advertisements.map(ad => ({
           adId: ad.adId._id || ad.adId,
@@ -129,6 +131,7 @@ export default function EditLoopPage() {
         loopName: loopName.trim(),
         description: description.trim(),
         rotationType,
+        displayLayout,
         advertisements: selectedAds.map((ad, idx) => ({
           adId: ad.adId,
           loopOrder: idx,
@@ -222,17 +225,31 @@ export default function EditLoopPage() {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Rotation Type
+                    Display Layout
                   </label>
                   <select
-                    value={rotationType}
-                    onChange={e => setRotationType(e.target.value)}
+                    value={displayLayout}
+                    onChange={e => setDisplayLayout(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b6f47] focus:border-transparent">
-                    <option value="sequential">Sequential (in order)</option>
-                    <option value="random">Random</option>
-                    <option value="scheduled">Scheduled</option>
+                    <option value="fullscreen">Fullscreen</option>
+                    <option value="masonry">Masonry</option>
                   </select>
                 </div>
+
+                {displayLayout === "fullscreen" && (
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Rotation Type
+                    </label>
+                    <select
+                      value={rotationType}
+                      onChange={e => setRotationType(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b6f47] focus:border-transparent">
+                      <option value="sequential">Sequential (slideshow)</option>
+                      <option value="random">Random</option>
+                    </select>
+                  </div>
+                )}
               </div>
             </div>
 

@@ -10,14 +10,20 @@ import * as loggingService from "../services/loggingService.js";
 
 /**
  * Create a new display loop
- * Body: { displayId, loopName, description?, advertisements: [{ adId, loopOrder }], rotationType? }
+ * Body: { displayId, loopName, description?, advertisements: [{ adId, loopOrder }], rotationType?, displayLayout? }
  * Returns: { loop, message }
  * Auth: Required
  */
 const createDisplayLoop = async (req, res) => {
   try {
-    const { displayId, loopName, description, advertisements, rotationType } =
-      req.body;
+    const {
+      displayId,
+      loopName,
+      description,
+      advertisements,
+      rotationType,
+      displayLayout,
+    } = req.body;
 
     // Validation
     if (
@@ -108,6 +114,7 @@ const createDisplayLoop = async (req, res) => {
       description: description?.trim() || "",
       advertisements: validatedAds,
       rotationType: rotationType || "sequential",
+      displayLayout: displayLayout || "fullscreen",
       totalDuration,
     });
 
@@ -130,6 +137,8 @@ const createDisplayLoop = async (req, res) => {
           displayId,
           advertisementCount: validatedAds.length,
           totalDuration,
+          rotationType: rotationType || "sequential",
+          displayLayout: displayLayout || "fullscreen",
         },
       },
       ipAddress: req.ip,
@@ -316,14 +325,20 @@ const getLoopById = async (req, res) => {
 /**
  * Update a display loop (reorder ads, change rotation type, etc)
  * Params: { id }
- * Body: { loopName?, description?, advertisements?, rotationType? }
+ * Body: { loopName?, description?, advertisements?, rotationType?, displayLayout? }
  * Returns: { loop, message }
  * Auth: Required
  */
 const updateDisplayLoop = async (req, res) => {
   try {
     const { id } = req.params;
-    const { loopName, description, advertisements, rotationType } = req.body;
+    const {
+      loopName,
+      description,
+      advertisements,
+      rotationType,
+      displayLayout,
+    } = req.body;
 
     const loop = await DisplayLoop.findById(id);
     if (!loop) {
@@ -351,11 +366,11 @@ const updateDisplayLoop = async (req, res) => {
     if (description !== undefined) {
       loop.description = description.trim();
     }
-    if (
-      rotationType &&
-      ["sequential", "random", "scheduled"].includes(rotationType)
-    ) {
+    if (rotationType && ["sequential", "random"].includes(rotationType)) {
       loop.rotationType = rotationType;
+    }
+    if (displayLayout && ["fullscreen", "masonry"].includes(displayLayout)) {
+      loop.displayLayout = displayLayout;
     }
 
     // Update advertisements if provided
@@ -413,6 +428,7 @@ const updateDisplayLoop = async (req, res) => {
           loopName,
           description,
           rotationType,
+          displayLayout,
           advertisementCount: advertisements?.length,
         },
         metadata: {
