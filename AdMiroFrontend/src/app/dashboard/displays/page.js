@@ -373,23 +373,30 @@ export default function DisplaysPage() {
                                   `/dashboard/displays/${display._id}`
                                 )
                               }
-                              className="p-2 text-[#8b6f47] hover:bg-[#f0ede9] rounded-lg transition"
+                              className="flex items-center gap-2 px-4 py-2 text-[#8b6f47] hover:bg-[#f0ede9] rounded-lg transition font-medium"
                               title="View/Edit details">
                               <PencilSimple size={18} weight="bold" />
+                              Edit
                             </button>
                             <button
                               onClick={() => setDeleteConfirmId(display._id)}
                               disabled={deleteLoading === display._id}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition disabled:opacity-50"
+                              className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition disabled:opacity-50 font-medium"
                               title="Delete display">
                               {deleteLoading === display._id ? (
-                                <CircleNotch
-                                  size={18}
-                                  className="animate-spin"
-                                  weight="bold"
-                                />
+                                <>
+                                  <CircleNotch
+                                    size={18}
+                                    className="animate-spin"
+                                    weight="bold"
+                                  />
+                                  Deleting...
+                                </>
                               ) : (
-                                <Trash size={18} />
+                                <>
+                                  <Trash size={18} />
+                                  Delete
+                                </>
                               )}
                             </button>
                           </div>

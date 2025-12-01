@@ -6,17 +6,26 @@ import Link from "next/link";
 import { toast } from "sonner";
 import axiosInstance from "@/lib/axiosConfig";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Plus, Trash, PencilSimple, CircleNotch } from "phosphor-react";
+import {
+  Plus,
+  Trash,
+  PencilSimple,
+  CircleNotch,
+  Monitor,
+} from "phosphor-react";
 import gsap from "gsap";
 
 export default function LoopsPage() {
   const router = useRouter();
   const mainRef = useRef(null);
   const [loops, setLoops] = useState([]);
+  const [displays, setDisplays] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [assignLoading, setAssignLoading] = useState(null);
+  const [openDropdown, setOpenDropdown] = useState(null);
 
   // Check auth and fetch loops
   useEffect(() => {
@@ -27,6 +36,7 @@ export default function LoopsPage() {
     }
 
     fetchLoops();
+    fetchDisplays();
   }, [router]);
 
   // Entry animation
@@ -62,6 +72,17 @@ export default function LoopsPage() {
     }
   };
 
+  const fetchDisplays = async () => {
+    try {
+      console.log("📤 Fetching displays...");
+      const response = await axiosInstance.get("/api/displays?limit=1000");
+      console.log("✅ Displays fetched:", response.data);
+      setDisplays(response.data.data.displays || []);
+    } catch (err) {
+      console.error("❌ Error fetching displays:", err);
+    }
+  };
+
   const handleDelete = async loopId => {
     try {
       setDeleteLoading(loopId);
@@ -82,6 +103,28 @@ export default function LoopsPage() {
       toast.error(errorMessage);
     } finally {
       setDeleteLoading(null);
+    }
+  };
+
+  const handleAssignToDisplay = async (loopId, displayId) => {
+    try {
+      setAssignLoading(loopId);
+      console.log("📍 Assigning loop to display:", loopId, displayId);
+
+      await axiosInstance.put(`/api/displays/${displayId}/assign-loop`, {
+        loopId,
+      });
+
+      toast.success("Loop assigned to display successfully!");
+      setOpenDropdown(null);
+    } catch (err) {
+      console.error("❌ Error assigning loop:", err);
+      const errorMessage =
+        err.response?.data?.message || "Failed to assign loop.";
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setAssignLoading(null);
     }
   };
 
@@ -159,8 +202,8 @@ export default function LoopsPage() {
             </div>
           ) : (
             // Loops Table
-            <div className="bg-white rounded-2xl border-2 border-[#e5e5e5] overflow-hidden shadow-sm">
-              <div className="overflow-x-auto">
+            <div className="bg-white rounded-2xl border-2 border-[#e5e5e5] shadow-sm">
+              <div className="overflow-x-auto overflow-y-visible">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-[#e5e5e5] bg-[#faf9f7]">
@@ -193,7 +236,11 @@ export default function LoopsPage() {
                         </td>
                         <td className="px-6 py-4">
                           <Link
-                            href={`/dashboard/displays/${loop.displayId}`}
+                            href={`/dashboard/displays/${
+                              typeof loop.displayId === "string"
+                                ? loop.displayId
+                                : loop.displayId?._id || ""
+                            }`}
                             className="text-[#8b6f47] hover:text-[#6d5636] font-medium">
                             {loop.displayName || "Unknown Display"}
                           </Link>
@@ -234,27 +281,65 @@ export default function LoopsPage() {
                           <div className="flex items-center justify-end gap-2">
                             <button
                               onClick={() =>
-                                router.push(
-                                  `/dashboard/displays/${loop.displayId}/loops/edit/${loop._id}`
+                                setOpenDropdown(
+                                  openDropdown === loop._id ? null : loop._id
                                 )
                               }
-                              className="p-2 text-[#8b6f47] hover:bg-[#f0ede9] rounded-lg transition"
+                              disabled={
+                                assignLoading === loop._id ||
+                                displays.length === 0
+                              }
+                              className="flex items-center gap-2 px-4 py-2 bg-[#8b6f47] text-white rounded-lg hover:bg-[#7a5f3a] transition disabled:opacity-50 font-medium">
+                              {assignLoading === loop._id ? (
+                                <>
+                                  <CircleNotch
+                                    size={18}
+                                    className="animate-spin"
+                                    weight="bold"
+                                  />
+                                  Assigning...
+                                </>
+                              ) : (
+                                <>
+                                  Assign to Display
+                                  <Monitor size={16} weight="bold" />
+                                </>
+                              )}
+                            </button>
+                            <button
+                              onClick={() =>
+                                router.push(
+                                  `/dashboard/displays/${
+                                    typeof loop.displayId === "string"
+                                      ? loop.displayId
+                                      : loop.displayId?._id || ""
+                                  }/loops/${loop._id}/edit`
+                                )
+                              }
+                              className="flex items-center gap-2 px-4 py-2 text-[#8b6f47] hover:bg-[#f0ede9] rounded-lg transition font-medium"
                               title="Edit loop">
                               <PencilSimple size={18} weight="bold" />
+                              Edit
                             </button>
                             <button
                               onClick={() => setDeleteConfirmId(loop._id)}
                               disabled={deleteLoading === loop._id}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition disabled:opacity-50"
+                              className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition disabled:opacity-50 font-medium"
                               title="Delete loop">
                               {deleteLoading === loop._id ? (
-                                <CircleNotch
-                                  size={18}
-                                  className="animate-spin"
-                                  weight="bold"
-                                />
+                                <>
+                                  <CircleNotch
+                                    size={18}
+                                    className="animate-spin"
+                                    weight="bold"
+                                  />
+                                  Deleting...
+                                </>
                               ) : (
-                                <Trash size={18} />
+                                <>
+                                  <Trash size={18} />
+                                  Delete
+                                </>
                               )}
                             </button>
                           </div>
@@ -279,7 +364,40 @@ export default function LoopsPage() {
         </div>
       </main>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Assign to Display Modal */}
+      {openDropdown && (
+        <div className="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">
+              Select a Display
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Choose which display to assign this playlist to:
+            </p>
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {displays.map(display => (
+                <button
+                  key={display._id}
+                  onClick={() =>
+                    handleAssignToDisplay(openDropdown, display._id)
+                  }
+                  disabled={assignLoading === openDropdown}
+                  className="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-[#faf9f7] hover:border-[#8b6f47] transition text-gray-900 font-medium disabled:opacity-50">
+                  {display.displayName}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setOpenDropdown(null)}
+              disabled={assignLoading === openDropdown}
+              className="w-full mt-6 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition disabled:opacity-50">
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
       {deleteConfirmId && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { toast } from "sonner";
 import axiosInstance from "@/lib/axiosConfig";
@@ -23,41 +23,41 @@ export default function DisplayLoopsPage() {
 
   const LIMIT = 10;
 
-  const fetchDisplay = useCallback(async () => {
-    try {
-      const response = await axiosInstance.get(`/api/displays/${displayId}`);
-      setDisplayName(response.data.data.displayName);
-    } catch (err) {
-      console.error("Error fetching display:", err);
-    }
-  }, [displayId]);
-
-  const fetchLoops = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError("");
-      const response = await axiosInstance.get(
-        `/api/loops/displays/${displayId}/loops?page=${page}&limit=${LIMIT}`
-      );
-      setLoops(response.data.data.loops);
-      setTotalPages(response.data.data.pagination.totalPages);
-    } catch (err) {
-      console.error("Error fetching loops:", err);
-      const errorMessage =
-        err.response?.data?.message || "Failed to load loops";
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  }, [displayId, page]);
-
   useEffect(() => {
-    if (displayId) {
-      fetchLoops();
-      fetchDisplay();
-    }
-  }, [displayId, page, fetchLoops, fetchDisplay]);
+    if (!displayId) return;
+
+    const fetchDisplay = async () => {
+      try {
+        const response = await axiosInstance.get(`/api/displays/${displayId}`);
+        setDisplayName(response.data.data.displayName);
+      } catch (err) {
+        console.error("Error fetching display:", err);
+      }
+    };
+
+    const fetchLoops = async () => {
+      try {
+        setLoading(true);
+        setError("");
+        const response = await axiosInstance.get(
+          `/api/loops/displays/${displayId}/loops?page=${page}&limit=${LIMIT}`
+        );
+        setLoops(response.data.data.loops);
+        setTotalPages(response.data.data.pagination.totalPages);
+      } catch (err) {
+        console.error("Error fetching loops:", err);
+        const errorMessage =
+          err.response?.data?.message || "Failed to load loops";
+        setError(errorMessage);
+        toast.error(errorMessage);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLoops();
+    fetchDisplay();
+  }, [displayId, page]);
 
   const handleDelete = async loopId => {
     setDeleting(true);
@@ -185,13 +185,15 @@ export default function DisplayLoopsPage() {
                             `/dashboard/displays/${displayId}/loops/${loop._id}/edit`
                           )
                         }
-                        className="p-2 text-gray-600 hover:text-[#8b6f47] hover:bg-[#faf9f7] rounded-lg transition">
+                        className="flex items-center gap-2 px-4 py-2 text-[#8b6f47] hover:bg-[#faf9f7] rounded-lg transition font-medium">
                         <Pencil size={20} weight="bold" />
+                        Edit
                       </button>
                       <button
                         onClick={() => setDeleteConfirm(loop._id)}
-                        className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
+                        className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition font-medium">
                         <Trash size={20} weight="bold" />
+                        Delete
                       </button>
                     </div>
                   </div>

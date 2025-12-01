@@ -20,6 +20,7 @@ export default function DisplayForm({ onSubmit, isLoading, error }) {
     displayId: "",
     displayName: "",
     location: "",
+    password: "",
     width: screenResolution.width,
     height: screenResolution.height,
   });
@@ -66,6 +67,10 @@ export default function DisplayForm({ onSubmit, isLoading, error }) {
       errors.location = "Location must be at least 3 characters.";
     }
 
+    if (formData.password && formData.password.length < 4) {
+      errors.password = "Password must be at least 4 characters if provided.";
+    }
+
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -82,6 +87,7 @@ export default function DisplayForm({ onSubmit, isLoading, error }) {
       displayId: formData.displayId.trim(),
       displayName: formData.displayName.trim(),
       location: formData.location.trim(),
+      password: formData.password.trim() || undefined,
       resolution: {
         width: formData.width,
         height: formData.height,
@@ -177,6 +183,35 @@ export default function DisplayForm({ onSubmit, isLoading, error }) {
             {validationErrors.location}
           </p>
         )}
+      </div>
+
+      {/* Password */}
+      <div>
+        <label className="block text-sm font-medium text-black mb-2">
+          Password (Optional)
+        </label>
+        <input
+          type="password"
+          name="password"
+          value={formData.password}
+          onChange={handleInputChange}
+          placeholder="Set a password for display login"
+          className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition bg-white text-black ${
+            validationErrors.password
+              ? "border-red-500 focus:border-red-500"
+              : "border-[#e5e5e5] focus:border-[#8b6f47]"
+          }`}
+          disabled={isLoading}
+        />
+        {validationErrors.password && (
+          <p className="mt-1 text-sm text-red-600">
+            {validationErrors.password}
+          </p>
+        )}
+        <p className="mt-1 text-xs text-gray-500">
+          Optional password for additional security when logging in displays.
+          Leave blank for no password protection.
+        </p>
       </div>
 
       {/* Resolution - Auto-detected from display */}

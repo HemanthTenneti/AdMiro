@@ -420,15 +420,21 @@ export default function AdvertisementsPage() {
                       <button
                         onClick={() => setDeleteConfirmId(ad._id)}
                         disabled={deleteLoading === ad._id}
-                        className="flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition disabled:opacity-50">
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition disabled:opacity-50">
                         {deleteLoading === ad._id ? (
-                          <CircleNotch
-                            size={16}
-                            className="animate-spin"
-                            weight="bold"
-                          />
+                          <>
+                            <CircleNotch
+                              size={16}
+                              className="animate-spin"
+                              weight="bold"
+                            />
+                            Deleting...
+                          </>
                         ) : (
-                          <Trash size={16} weight="bold" />
+                          <>
+                            <Trash size={16} weight="bold" />
+                            Delete
+                          </>
                         )}
                       </button>
                     </div>

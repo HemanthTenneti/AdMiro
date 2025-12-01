@@ -61,7 +61,7 @@ export default function DashboardLayout({ children }) {
     },
     { label: "Advertisements", href: "/dashboard/ads", icon: Image },
     { label: "Display Loops", href: "/dashboard/loops", icon: Play },
-    { label: "System Logs", href: "/dashboard/logs", icon: Clock },
+    { label: "All Logs", href: "/dashboard/logs", icon: Clock },
     { label: "Analytics", href: "/dashboard/analytics", icon: ChartLine },
     { label: "Profile", href: "/dashboard/profile", icon: Gear },
     { label: "Settings", href: "/dashboard/settings", icon: Gear },

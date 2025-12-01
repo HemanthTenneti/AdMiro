@@ -13,10 +13,11 @@ import {
   GripVertical,
 } from "phosphor-react";
 
-export default function CreateLoopPage() {
+export default function EditLoopPage() {
   const router = useRouter();
   const params = useParams();
   const displayId = params.id;
+  const loopId = params.loopId;
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -29,29 +30,40 @@ export default function CreateLoopPage() {
   const [displayName, setDisplayName] = useState("");
 
   useEffect(() => {
-    if (!displayId) return;
+    if (!displayId || !loopId) return;
 
-    const fetchDisplay = async () => {
-      try {
-        const response = await axiosInstance.get(`/api/displays/${displayId}`);
-        setDisplayName(response.data.data.displayName);
-      } catch (err) {
-        console.error("Error fetching display:", err);
-        setError("Failed to load display");
-      }
-    };
-
-    const fetchAds = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await axiosInstance.get("/api/ads?limit=1000");
-        const activeAds = response.data.data.advertisements.filter(
+
+        const [displayRes, loopRes, adsRes] = await Promise.all([
+          axiosInstance.get(`/api/displays/${displayId}`),
+          axiosInstance.get(`/api/loops/${loopId}`),
+          axiosInstance.get("/api/ads?limit=1000"),
+        ]);
+
+        setDisplayName(displayRes.data.data.displayName);
+
+        const loop = loopRes.data.data;
+        setLoopName(loop.loopName);
+        setDescription(loop.description || "");
+        setRotationType(loop.rotationType);
+
+        const selectedAdvertisements = loop.advertisements.map(ad => ({
+          adId: ad.adId._id || ad.adId,
+          loopOrder: ad.loopOrder,
+          adName: ad.adId?.adName || ad.adName,
+        }));
+        setSelectedAds(selectedAdvertisements);
+
+        const activeAds = adsRes.data.data.advertisements.filter(
           ad => ad.status === "active"
         );
         setAds(activeAds);
       } catch (err) {
-        console.error("Error fetching ads:", err);
-        const errorMessage = "Failed to load advertisements";
+        console.error("Error fetching data:", err);
+        const errorMessage =
+          err.response?.data?.message || "Failed to load loop";
         setError(errorMessage);
         toast.error(errorMessage);
       } finally {
@@ -59,9 +71,8 @@ export default function CreateLoopPage() {
       }
     };
 
-    fetchDisplay();
-    fetchAds();
-  }, [displayId]);
+    fetchData();
+  }, [displayId, loopId]);
 
   const handleAddAd = adId => {
     if (!selectedAds.find(item => item.adId === adId)) {
@@ -115,7 +126,6 @@ export default function CreateLoopPage() {
       }
 
       const payload = {
-        displayId,
         loopName: loopName.trim(),
         description: description.trim(),
         rotationType,
@@ -125,20 +135,30 @@ export default function CreateLoopPage() {
         })),
       };
 
-      const response = await axiosInstance.post("/api/loops", payload);
-      toast.success("Loop created successfully!");
+      await axiosInstance.put(`/api/loops/${loopId}`, payload);
+      toast.success("Loop updated successfully!");
 
       // Redirect to loops list
       router.push(`/dashboard/displays/${displayId}/loops`);
     } catch (err) {
       const errorMessage =
-        err.response?.data?.message || "Failed to create loop";
+        err.response?.data?.message || "Failed to update loop";
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
       setSubmitting(false);
     }
   };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex justify-center items-center h-96">
+          <CircleNotch size={48} className="animate-spin text-[#8b6f47]" />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -153,7 +173,7 @@ export default function CreateLoopPage() {
             </button>
             <div>
               <h1 className="text-4xl font-bold text-gray-900">
-                Create New Playlist
+                Edit Playlist
               </h1>
               <p className="text-gray-600">For: {displayName}</p>
             </div>
@@ -222,14 +242,7 @@ export default function CreateLoopPage() {
                 Add Advertisements
               </h2>
 
-              {loading ? (
-                <div className="flex justify-center py-8">
-                  <CircleNotch
-                    size={40}
-                    className="animate-spin text-[#8b6f47]"
-                  />
-                </div>
-              ) : ads.length === 0 ? (
+              {ads.length === 0 ? (
                 <p className="text-gray-600 py-8">
                   No active advertisements available. Create some ads first.
                 </p>
@@ -328,10 +341,10 @@ export default function CreateLoopPage() {
                 {submitting ? (
                   <>
                     <CircleNotch size={20} className="animate-spin" />
-                    Creating...
+                    Updating...
                   </>
                 ) : (
-                  "Create Playlist"
+                  "Update Playlist"
                 )}
               </button>
             </div>

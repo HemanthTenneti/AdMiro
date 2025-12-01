@@ -9,6 +9,8 @@ import {
   DotsThreeVertical,
   SignOut,
   Repeat,
+  CaretLeft,
+  CaretRight,
 } from "phosphor-react";
 
 export default function DisplayPage() {
@@ -33,24 +35,24 @@ export default function DisplayPage() {
   const [showMenu, setShowMenu] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const menuRef = useRef(null);
+  const timerRef = useRef(null);
+  const currentDurationRef = useRef(0);
+  const currentAdIdRef = useRef(null);
 
   // Report status to backend
-  const reportDisplayStatus = useCallback(
-    async (token, status) => {
-      try {
-        console.log("📡 Reporting display status:", status);
-        await axiosInstance.post("/api/displays/report-status", {
-          connectionToken: token,
-          status,
-          currentAdPlaying: currentAd?.adId || "none",
-        });
-        console.log("✅ Status reported successfully");
-      } catch (err) {
-        console.error("❌ Error reporting status:", err);
-      }
-    },
-    [currentAd?.adId]
-  );
+  const reportDisplayStatus = useCallback(async (token, status) => {
+    try {
+      console.log("📡 Reporting display status:", status);
+      await axiosInstance.post("/api/displays/report-status", {
+        connectionToken: token,
+        status,
+        currentAdPlaying: currentAdIdRef.current || "none",
+      });
+      console.log("✅ Status reported successfully");
+    } catch (err) {
+      console.error("❌ Error reporting status:", err);
+    }
+  }, []);
 
   // Fetch ads for display
   const fetchAdsForDisplay = useCallback(async () => {
@@ -85,6 +87,11 @@ export default function DisplayPage() {
     }
   }, []);
 
+  // Update ref when currentAd changes
+  useEffect(() => {
+    currentAdIdRef.current = currentAd?.adId || null;
+  }, [currentAd]);
+
   // Initialize display on mount
   useEffect(() => {
     const token = localStorage.getItem("connectionToken");
@@ -112,14 +119,8 @@ export default function DisplayPage() {
       reportDisplayStatus(token, "online");
     }, 10000);
 
-    // Set up loop polling (check for new loop assignments every 30 seconds)
-    const loopPollingInterval = setInterval(() => {
-      fetchAdsForDisplay();
-    }, 30000);
-
     return () => {
       clearInterval(heartbeatInterval);
-      clearInterval(loopPollingInterval);
     };
   }, [fetchAdsForDisplay, reportDisplayStatus]);
 
@@ -165,21 +166,39 @@ export default function DisplayPage() {
   useEffect(() => {
     if (!currentAd || ads.length === 0) return;
 
-    const timer = setInterval(() => {
-      setTimeRemaining(prev => {
-        if (prev <= 1) {
-          // Move to next ad
-          const nextIndex = (currentAdIndex + 1) % ads.length;
-          setCurrentAdIndex(nextIndex);
+    // Clear any existing timer
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+
+    // Set initial duration
+    currentDurationRef.current = currentAd.duration;
+    setTimeRemaining(currentAd.duration);
+
+    // Create new timer
+    timerRef.current = setInterval(() => {
+      currentDurationRef.current -= 1;
+      setTimeRemaining(currentDurationRef.current);
+
+      // When duration reaches 0, advance to next ad
+      if (currentDurationRef.current <= 0) {
+        clearInterval(timerRef.current);
+        setCurrentAdIndex(prev => {
+          const nextIndex = (prev + 1) % ads.length;
           setCurrentAd(ads[nextIndex]);
-          return ads[nextIndex].duration;
-        }
-        return prev - 1;
-      });
+          currentDurationRef.current = ads[nextIndex].duration;
+          setTimeRemaining(ads[nextIndex].duration);
+          return nextIndex;
+        });
+      }
     }, 1000);
 
-    return () => clearInterval(timer);
-  }, [currentAd, currentAdIndex, ads]);
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [currentAd, ads]);
 
   // Handle display login
   const handleDisplayLogin = async e => {
@@ -261,6 +280,28 @@ export default function DisplayPage() {
     } catch (err) {
       console.error("Refresh failed:", err);
       setIsRefreshing(false);
+    }
+  };
+
+  // Handle previous ad
+  const handlePreviousAd = () => {
+    if (ads.length > 1) {
+      const prevIndex = (currentAdIndex - 1 + ads.length) % ads.length;
+      setCurrentAdIndex(prevIndex);
+      setCurrentAd(ads[prevIndex]);
+      setTimeRemaining(ads[prevIndex].duration);
+      currentDurationRef.current = ads[prevIndex].duration;
+    }
+  };
+
+  // Handle next ad
+  const handleNextAd = () => {
+    if (ads.length > 1) {
+      const nextIndex = (currentAdIndex + 1) % ads.length;
+      setCurrentAdIndex(nextIndex);
+      setCurrentAd(ads[nextIndex]);
+      setTimeRemaining(ads[nextIndex].duration);
+      currentDurationRef.current = ads[nextIndex].duration;
     }
   };
 
@@ -422,6 +463,32 @@ export default function DisplayPage() {
               }}
             />
           )}
+
+          {/* Left Caret Button */}
+          <button
+            onClick={handlePreviousAd}
+            disabled={ads.length <= 1}
+            className={`absolute left-4 top-1/2 -translate-y-1/2 z-40 p-3 rounded-lg transition ${
+              ads.length <= 1
+                ? "bg-gray-500 bg-opacity-30 text-gray-400 cursor-not-allowed"
+                : "bg-black bg-opacity-40 hover:bg-opacity-60 text-white cursor-pointer"
+            }`}
+            title={ads.length <= 1 ? "Only one media" : "Previous media"}>
+            <CaretLeft size={32} weight="bold" />
+          </button>
+
+          {/* Right Caret Button */}
+          <button
+            onClick={handleNextAd}
+            disabled={ads.length <= 1}
+            className={`absolute right-4 top-1/2 -translate-y-1/2 z-40 p-3 rounded-lg transition ${
+              ads.length <= 1
+                ? "bg-gray-500 bg-opacity-30 text-gray-400 cursor-not-allowed"
+                : "bg-black bg-opacity-40 hover:bg-opacity-60 text-white cursor-pointer"
+            }`}
+            title={ads.length <= 1 ? "Only one media" : "Next media"}>
+            <CaretRight size={32} weight="bold" />
+          </button>
 
           {/* Menu Button (top left) */}
           <div className="absolute top-4 left-4 z-50" ref={menuRef}>

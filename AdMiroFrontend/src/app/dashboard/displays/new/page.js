@@ -121,6 +121,11 @@ export default function NewDisplayPage() {
                 the display device
               </li>
               <li>
+                • <strong>Password:</strong> Optional password for secure login.
+                If set, displays can login using Display ID + password instead
+                of connection tokens
+              </li>
+              <li>
                 • <strong>Resolution:</strong> Automatically detected from your
                 device. Shows your display&apos;s current resolution.
               </li>

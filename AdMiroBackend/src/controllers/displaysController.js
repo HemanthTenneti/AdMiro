@@ -17,7 +17,7 @@ import * as loggingService from "../services/loggingService.js";
  */
 const createDisplay = async (req, res) => {
   try {
-    const { displayId, displayName, location, resolution } = req.body;
+    const { displayId, displayName, location, resolution, password } = req.body;
 
     // Validation
     if (!displayId || !displayName || !location) {
@@ -48,6 +48,19 @@ const createDisplay = async (req, res) => {
       return res
         .status(400)
         .json(formatErrorResponse("Location must be at least 3 characters."));
+    }
+
+    // Validate password if provided
+    let hashedPassword = null;
+    if (password) {
+      if (password.length < 4) {
+        return res
+          .status(400)
+          .json(formatErrorResponse("Password must be at least 4 characters."));
+      }
+      // Hash the password
+      const saltRounds = 10;
+      hashedPassword = await bcrypt.hash(password, saltRounds);
     }
 
     // Validate display ID is unique
@@ -92,6 +105,7 @@ const createDisplay = async (req, res) => {
       location: location.trim(),
       connectionToken,
       assignedAdmin: req.user.userId,
+      password: hashedPassword,
       // Use provided resolution or defaults
       resolution: resolution || { width: 1920, height: 1080 },
     };
