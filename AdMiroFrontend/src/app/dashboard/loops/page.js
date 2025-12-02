@@ -115,6 +115,16 @@ export default function LoopsPage() {
         loopId,
       });
 
+      // Trigger display refresh to load new loop immediately
+      try {
+        console.log("🔄 Triggering display refresh...");
+        await axiosInstance.post(`/api/displays/${displayId}/trigger-refresh`);
+        console.log("✅ Display refresh triggered");
+      } catch (refreshErr) {
+        console.warn("⚠️ Could not trigger display refresh:", refreshErr);
+        // Don't fail the assignment if refresh fails
+      }
+
       toast.success("Loop assigned to display successfully!");
       setOpenDropdown(null);
     } catch (err) {
@@ -145,7 +155,7 @@ export default function LoopsPage() {
     <DashboardLayout>
       <main
         ref={mainRef}
-        className="min-h-screen bg-linear-to-br from-[#faf9f7] to-[#f5f3f0] p-8">
+        className="min-h-screen bg-gradient-to-br from-[#faf9f7] to-[#f5f3f0] p-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
@@ -158,7 +168,7 @@ export default function LoopsPage() {
               </p>
             </div>
             <Link
-              href="/dashboard/displays"
+              href="/dashboard/loops/new"
               className="flex items-center gap-2 px-6 py-3 bg-[#8b6f47] hover:bg-[#7a5f3a] text-white font-semibold rounded-lg transition">
               <Plus size={20} weight="bold" />
               Create Loop
@@ -261,7 +271,8 @@ export default function LoopsPage() {
                                     <div
                                       key={idx}
                                       className="text-sm text-gray-600">
-                                      {idx + 1}. {ad.adName || "Unknown Ad"}
+                                      {idx + 1}.{" "}
+                                      {ad.adId?.adName || ad.adName || "Unknown Ad"}
                                     </div>
                                   ))}
                                 {loop.advertisements.length > 2 && (
@@ -366,31 +377,71 @@ export default function LoopsPage() {
 
       {/* Assign to Display Modal */}
       {openDropdown && (
-        <div className="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">
-              Select a Display
-            </h3>
-            <p className="text-gray-600 mb-6">
-              Choose which display to assign this playlist to:
-            </p>
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              {displays.map(display => (
-                <button
-                  key={display._id}
-                  onClick={() =>
-                    handleAssignToDisplay(openDropdown, display._id)
-                  }
-                  disabled={assignLoading === openDropdown}
-                  className="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-[#faf9f7] hover:border-[#8b6f47] transition text-gray-900 font-medium disabled:opacity-50">
-                  {display.displayName}
-                </button>
-              ))}
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-[#faf9f7] rounded-2xl border-2 border-[#e5e5e5] shadow-2xl p-8 max-w-md w-full mx-4 transform transition-all">
+            <div className="mb-6">
+              <h3 className="text-2xl font-bold text-black mb-2">
+                Assign to Display
+              </h3>
+              <p className="text-gray-600">
+                Choose which display will show this loop
+              </p>
             </div>
+
+            <div className="space-y-3 max-h-80 overflow-y-auto mb-6 pr-2">
+              {displays.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <p className="font-medium mb-2">No displays available</p>
+                  <p className="text-sm">
+                    Create a display first to assign loops
+                  </p>
+                </div>
+              ) : (
+                displays.map(display => (
+                  <button
+                    key={display._id}
+                    onClick={() =>
+                      handleAssignToDisplay(openDropdown, display._id)
+                    }
+                    disabled={assignLoading === openDropdown}
+                    className="w-full text-left px-5 py-4 bg-white border-2 border-[#e5e5e5] rounded-xl hover:border-[#8b6f47] hover:shadow-md transition-all duration-200 text-black font-semibold disabled:opacity-50 disabled:cursor-not-allowed group">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-[#f5f3f0] group-hover:bg-[#8b6f47] transition-colors duration-200 flex items-center justify-center">
+                          <Monitor
+                            size={20}
+                            weight="bold"
+                            className="text-[#8b6f47] group-hover:text-white transition-colors duration-200"
+                          />
+                        </div>
+                        <div>
+                          <div className="font-bold text-black">
+                            {display.displayName}
+                          </div>
+                          {display.location && (
+                            <div className="text-sm text-gray-500">
+                              {display.location}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      {assignLoading === openDropdown && (
+                        <CircleNotch
+                          size={20}
+                          className="animate-spin text-[#8b6f47]"
+                          weight="bold"
+                        />
+                      )}
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+
             <button
               onClick={() => setOpenDropdown(null)}
               disabled={assignLoading === openDropdown}
-              className="w-full mt-6 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition disabled:opacity-50">
+              className="w-full px-6 py-3 bg-white border-2 border-[#e5e5e5] rounded-xl text-gray-700 font-semibold hover:bg-[#8b6f47] hover:text-white hover:border-[#8b6f47] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
               Cancel
             </button>
           </div>
@@ -399,26 +450,29 @@ export default function LoopsPage() {
 
       {/* Delete Confirmation Modal */}
       {deleteConfirmId && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Delete Loop
-            </h3>
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to delete this loop? This action cannot be
-              undone.
-            </p>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-[#faf9f7] rounded-2xl border-2 border-[#e5e5e5] shadow-2xl p-8 max-w-md w-full mx-4 transform transition-all">
+            <div className="mb-6">
+              <h3 className="text-2xl font-bold text-black mb-2">
+                Delete Loop
+              </h3>
+              <p className="text-gray-600">
+                Are you sure you want to delete this loop? This action cannot be
+                undone.
+              </p>
+            </div>
+
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setDeleteConfirmId(null)}
                 disabled={deleteLoading === deleteConfirmId}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition disabled:opacity-50">
+                className="px-6 py-3 bg-white border-2 border-[#e5e5e5] rounded-xl text-gray-700 font-semibold hover:bg-[#f0ede9] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
                 Cancel
               </button>
               <button
                 onClick={() => handleDelete(deleteConfirmId)}
                 disabled={deleteLoading === deleteConfirmId}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition disabled:opacity-50 flex items-center gap-2">
+                className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
                 {deleteLoading === deleteConfirmId && (
                   <CircleNotch size={16} className="animate-spin" />
                 )}

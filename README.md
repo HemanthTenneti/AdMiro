@@ -17,12 +17,12 @@ A modern, full-stack web application for managing digital advertisements and dis
 ### Advertisement System
 
 - **Flexible Media Input**:
-  - Upload media files (images & videos)
+  - Upload media files (images & videos) (TO BE ADDED)
   - Direct URL/link support for external media
   - Automatic base64 encoding for serverless compatibility
 - **Media Support**: JPG, PNG, GIF, WebP (images) & MP4, MOV, AVI (videos)
 - **Auto-Active Status**: All advertisements immediately active on creation
-- **File Size Limits**: 100MB for media, 5MB for profile pictures
+- **File Size Limits**: 100MB for media, 5MB for profile pictures (None yet)
 - **Direct Database Storage**: All media stored as base64 in MongoDB (no disk dependencies)
 
 ### Display Loop System
@@ -207,8 +207,8 @@ App runs on `http://localhost:3000`
 
    - Go to Dashboard → Playlists
    - Create new loop with name & description
-   - Add advertisements with drag-drop ordering
-   - Set rotation type (sequential, random, weighted)
+   - Add advertisements with click-select ordering
+   - Set advertisement type (sequential, masonry)
 
 3. **Assign to Display**:
 

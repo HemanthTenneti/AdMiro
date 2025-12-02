@@ -36,7 +36,7 @@ export default function AdvertisementsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const itemsPerPage = 8;
+  const itemsPerPage = 9;
 
   // Check auth and fetch advertisements
   useEffect(() => {
@@ -52,6 +52,7 @@ export default function AdvertisementsPage() {
   // Refetch when filters change
   useEffect(() => {
     setPage(1);
+    fetchAdvertisements(1);
   }, [statusFilter, sortBy, order]);
 
   // Entry animation
@@ -178,20 +179,6 @@ export default function AdvertisementsPage() {
       })
     : advertisements;
 
-  // Ensure page is within valid range
-  const totalPages = Math.ceil(advertisements.length / itemsPerPage);
-  const validPage = Math.min(Math.max(1, page), Math.max(1, totalPages));
-  if (validPage !== page) {
-    setPage(validPage);
-  }
-
-  // Pagination logic
-  const startIndex = (validPage - 1) * itemsPerPage;
-  const paginatedAds = advertisements.slice(
-    startIndex,
-    startIndex + itemsPerPage
-  );
-
   return (
     <DashboardLayout>
       <main
@@ -260,8 +247,6 @@ export default function AdvertisementsPage() {
                   onChange={e => setStatusFilter(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b6f47] focus:border-transparent">
                   <option value="">All Status</option>
-                  <option value="draft">Draft</option>
-                  <option value="scheduled">Scheduled</option>
                   <option value="active">Active</option>
                   <option value="paused">Paused</option>
                   <option value="expired">Expired</option>

@@ -152,7 +152,97 @@ export default function DisplayPage() {
     };
 
     requestFullscreen();
-  }, [displayId]);
+  }, [displayId, loopData]);
+
+  // Poll for refresh triggers from backend
+  useEffect(() => {
+    if (!displayId) return;
+
+    const checkForRefreshTrigger = async () => {
+      try {
+        const response = await axiosInstance.get(
+          `/api/displays/check-refresh/${displayId}`
+        );
+        if (response.data?.data?.shouldRefresh) {
+          console.log(
+            "🔄 Refresh trigger detected, checking for loop changes..."
+          );
+
+          // Fetch the new loop data
+          const dispId = localStorage.getItem("displayId");
+          const loopResponse = await axiosInstance.get(
+            `/api/displays/loop/${dispId}`
+          );
+          const newLoop = loopResponse.data.data.loop;
+          const newAdvertisements = loopResponse.data.data.advertisements || [];
+
+          // Check if the loop actually changed (compare loop IDs)
+          const currentLoopId = loopData?._id;
+          const newLoopId = newLoop?._id;
+
+          if (currentLoopId !== newLoopId) {
+            console.log("🔄 Loop changed, reloading from start...");
+            // Loop changed completely, reload from scratch
+            setLoopData(newLoop);
+            setAds(newAdvertisements);
+            if (
+              newLoop.displayLayout === "fullscreen" &&
+              newAdvertisements.length > 0
+            ) {
+              setCurrentAdIndex(0);
+              setCurrentAd(newAdvertisements[0]);
+              setTimeRemaining(newAdvertisements[0].duration);
+            }
+          } else {
+            // Same loop, check if ads changed
+            const currentAdIds = ads
+              .map(ad => ad._id)
+              .sort()
+              .join(",");
+            const newAdIds = newAdvertisements
+              .map(ad => ad._id)
+              .sort()
+              .join(",");
+
+            if (currentAdIds !== newAdIds) {
+              console.log(
+                "🔄 Ads in loop changed, updating without restart..."
+              );
+              // Ads changed, update the list but try to preserve position
+              setLoopData(newLoop);
+              setAds(newAdvertisements);
+
+              // If current ad is still in the new list, keep playing it
+              if (newLoop.displayLayout === "fullscreen" && currentAd) {
+                const currentAdStillExists = newAdvertisements.find(
+                  ad => ad._id === currentAd._id
+                );
+                if (!currentAdStillExists && newAdvertisements.length > 0) {
+                  // Current ad was removed, switch to first ad
+                  setCurrentAdIndex(0);
+                  setCurrentAd(newAdvertisements[0]);
+                  setTimeRemaining(newAdvertisements[0].duration);
+                }
+                // Otherwise keep playing the current ad
+              }
+            } else {
+              console.log("✅ No changes detected, continuing playback");
+            }
+          }
+        }
+      } catch (err) {
+        // Silently fail - this is a background polling operation
+        console.debug("Refresh check failed:", err.message);
+      }
+    };
+
+    // Check for refresh triggers every 3 seconds
+    const refreshInterval = setInterval(checkForRefreshTrigger, 3000);
+
+    return () => {
+      clearInterval(refreshInterval);
+    };
+  }, [displayId, loopData, ads, currentAd]);
 
   // Handle ESC key to exit fullscreen and return to login
   useEffect(() => {

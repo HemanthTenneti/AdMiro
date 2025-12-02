@@ -248,7 +248,7 @@ export default function DisplayForm({ onSubmit, isLoading, error }) {
         type="submit"
         disabled={isLoading}
         className="w-full bg-[#8b6f47] hover:bg-[#6d5636] disabled:bg-gray-400 text-white font-semibold py-3 rounded-lg transition duration-200">
-        {isLoading ? "Creating Display..." : "Create Display"}
+        {isLoading ? "Adding Display..." : "Add Display"}
       </button>
     </form>
   );

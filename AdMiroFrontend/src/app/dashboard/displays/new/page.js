@@ -60,7 +60,7 @@ export default function NewDisplayPage() {
       const errorMessage =
         err.response?.data?.message ||
         err.message ||
-        "Failed to create display. Please try again.";
+        "Failed to add display. Please try again.";
 
       setError(errorMessage);
       toast.error(errorMessage);

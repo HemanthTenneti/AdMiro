@@ -86,6 +86,14 @@ const displaySchema = new mongoose.Schema(
       ref: "DisplayLoop",
       default: null,
     },
+    needsRefresh: {
+      type: Boolean,
+      default: false,
+    },
+    lastRefreshCheck: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

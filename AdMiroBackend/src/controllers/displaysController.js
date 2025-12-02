@@ -110,7 +110,7 @@ const createDisplay = async (req, res) => {
       resolution: resolution || { width: 1920, height: 1080 },
     };
 
-    // Create display in database
+    // Add display in database
     const newDisplay = new Display(displayData);
     await newDisplay.save();
 
@@ -155,13 +155,13 @@ const createDisplay = async (req, res) => {
 
 /**
  * Get all displays for the current user
- * Query: { page?, limit?, status? }
+ * Query: { page?, limit?, status?, sortBy?, order? }
  * Returns: { displays, pagination, message }
  * Auth: Required
  */
 const getDisplays = async (req, res) => {
   try {
-    const { page = 1, limit = 10, status } = req.query;
+    const { page = 1, limit = 10, status, sortBy, order = "desc" } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     // Build filter - get displays assigned to current user
@@ -175,11 +175,31 @@ const getDisplays = async (req, res) => {
       filter
     );
 
+    // Build sort object
+    let sortObject = { createdAt: -1 }; // Default sort by creation date descending
+    if (sortBy) {
+      const sortDirection = order === "asc" ? 1 : -1;
+
+      // Handle nested fields and special cases
+      if (sortBy === "assignedAdmin") {
+        // Sort by admin's first name
+        sortObject = { "assignedAdmin.firstName": sortDirection };
+      } else if (sortBy === "resolution") {
+        // Sort by resolution width
+        sortObject = { "resolution.width": sortDirection };
+      } else {
+        // Standard field sorting
+        sortObject = { [sortBy]: sortDirection };
+      }
+    }
+
+    console.log("📊 Sort configuration:", sortObject);
+
     const displays = await Display.find(filter)
       .populate("assignedAdmin", "firstName lastName username email")
       .skip(skip)
       .limit(parseInt(limit))
-      .sort({ createdAt: -1 });
+      .sort(sortObject);
 
     const total = await Display.countDocuments(filter);
 
@@ -553,7 +573,7 @@ const registerDisplayDevice = async (req, res) => {
     // Generate connection token
     const connectionToken = uuidv4();
 
-    // Create display record without assigned admin (null initially)
+    // Add display record without assigned admin (null initially)
     // Device will wait for admin approval before being fully activated
     const newDisplay = new Display({
       displayId,
@@ -1253,6 +1273,92 @@ const assignLoopToDisplay = async (req, res) => {
 };
 
 /**
+ * Trigger a refresh for a specific display
+ * Params: { displayId }
+ * Returns: { message }
+ * Auth: Required (must be display owner)
+ */
+const triggerDisplayRefresh = async (req, res) => {
+  try {
+    const { displayId } = req.params;
+
+    // Find the display
+    const display = await Display.findById(displayId);
+    if (!display) {
+      return res.status(404).json(formatErrorResponse("Display not found."));
+    }
+
+    // Check if user is the owner of the display
+    const userId = req.user.userId?.toString?.() || req.user.userId;
+    const displayOwnerId =
+      display.assignedAdmin?.toString() || display.assignedAdmin;
+
+    if (displayOwnerId !== userId) {
+      return res
+        .status(403)
+        .json(
+          formatErrorResponse(
+            "You do not have permission to trigger refresh for this display."
+          )
+        );
+    }
+
+    // Set the refresh flag
+    display.needsRefresh = true;
+    await display.save();
+
+    console.log(`✅ Refresh triggered for display ${displayId}`);
+
+    return res
+      .status(200)
+      .json(
+        formatSuccessResponse({}, "Display refresh triggered successfully.")
+      );
+  } catch (error) {
+    console.error("❌ Trigger display refresh error:", error.message);
+    return res.status(500).json(formatErrorResponse(error.message));
+  }
+};
+
+/**
+ * Check if display needs to refresh
+ * Params: { displayId }
+ * Returns: { shouldRefresh: boolean }
+ * Auth: Not required (public endpoint for displays)
+ */
+const checkDisplayRefresh = async (req, res) => {
+  try {
+    const { displayId } = req.params;
+
+    // Find the display by displayId string
+    const display = await Display.findOne({ displayId });
+    if (!display) {
+      return res.status(404).json(formatErrorResponse("Display not found."));
+    }
+
+    const shouldRefresh = display.needsRefresh || false;
+
+    // If refresh was needed, clear the flag and update check time
+    if (shouldRefresh) {
+      display.needsRefresh = false;
+      display.lastRefreshCheck = new Date();
+      await display.save();
+    }
+
+    console.log(`✅ Refresh check for display ${displayId}: ${shouldRefresh}`);
+
+    return res
+      .status(200)
+      .json(
+        formatSuccessResponse({ shouldRefresh }, "Refresh status checked.")
+      );
+  } catch (error) {
+    console.error("❌ Check display refresh error:", error.message);
+    return res.status(500).json(formatErrorResponse(error.message));
+  }
+};
+
+/**
  * Get display's current loop with populated advertisements
  * Params: { token } - connection token
  * Returns: { loop, advertisements, message }
@@ -1275,4 +1381,6 @@ export {
   rejectConnectionRequest,
   getDisplayLoop,
   assignLoopToDisplay,
+  triggerDisplayRefresh,
+  checkDisplayRefresh,
 };

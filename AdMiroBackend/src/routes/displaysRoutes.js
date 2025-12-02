@@ -15,6 +15,8 @@ import {
   rejectConnectionRequest,
   getDisplayLoop,
   assignLoopToDisplay,
+  triggerDisplayRefresh,
+  checkDisplayRefresh,
 } from "../controllers/displaysController.js";
 import { verifyToken } from "../middleware/auth.js";
 
@@ -137,6 +139,22 @@ router.put("/:id/assign-admin", verifyToken, assignDisplayAdmin);
  * Body: { loopId }
  */
 router.put("/:displayId/assign-loop", verifyToken, assignLoopToDisplay);
+
+/**
+ * POST /api/displays/:displayId/trigger-refresh
+ * Trigger a refresh for a specific display
+ * Auth: Required (must be display owner)
+ * Params: { displayId }
+ */
+router.post("/:displayId/trigger-refresh", verifyToken, triggerDisplayRefresh);
+
+/**
+ * GET /api/displays/check-refresh/:displayId
+ * Check if display needs to refresh (and clear flag if true)
+ * Auth: Not required (public endpoint for displays)
+ * Params: { displayId }
+ */
+router.get("/check-refresh/:displayId", checkDisplayRefresh);
 
 /**
  * DELETE /api/displays/:id

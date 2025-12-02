@@ -34,6 +34,8 @@ export default function DisplaysPage() {
   const [totalItems, setTotalItems] = useState(0);
   const [copiedId, setCopiedId] = useState(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [sortBy, setSortBy] = useState(null);
+  const [sortOrder, setSortOrder] = useState("none"); // "none", "asc", "desc"
   const itemsPerPage = 8;
 
   // Check auth and fetch displays
@@ -45,7 +47,7 @@ export default function DisplaysPage() {
     }
 
     fetchDisplays(page);
-  }, [router, page]);
+  }, [router, page, sortBy, sortOrder]);
 
   // Entry animation
   useEffect(() => {
@@ -64,11 +66,19 @@ export default function DisplaysPage() {
       setError("");
       console.log(`📤 Fetching displays - Page ${pageNum}...`);
 
+      const params = {
+        page: pageNum,
+        limit: itemsPerPage,
+      };
+
+      // Add sorting parameters if a column is sorted
+      if (sortBy && sortOrder !== "none") {
+        params.sortBy = sortBy;
+        params.order = sortOrder === "asc" ? "asc" : "desc";
+      }
+
       const response = await axiosInstance.get("/api/displays", {
-        params: {
-          page: pageNum,
-          limit: itemsPerPage,
-        },
+        params,
       });
       console.log("✅ Displays fetched:", response.data);
 
@@ -124,6 +134,30 @@ export default function DisplaysPage() {
     setCopiedId(displayId);
     toast.success("Display ID copied!");
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleColumnSort = columnName => {
+    setPage(1); // Reset to first page when sorting changes
+    if (sortBy === columnName) {
+      // Cycle through: asc -> desc -> none -> asc
+      const nextOrder =
+        sortOrder === "asc" ? "desc" : sortOrder === "desc" ? "none" : "asc";
+      setSortOrder(nextOrder);
+      if (nextOrder === "none") {
+        setSortBy(null);
+      }
+    } else {
+      // New column - start with ascending
+      setSortBy(columnName);
+      setSortOrder("asc");
+    }
+  };
+
+  const getSortIndicator = columnName => {
+    if (sortBy !== columnName) return "";
+    if (sortOrder === "asc") return " ↑";
+    if (sortOrder === "desc") return " ↓";
+    return "";
   };
 
   const getStatusColor = status => {
@@ -200,7 +234,7 @@ export default function DisplaysPage() {
               href="/dashboard/displays/new"
               className="flex items-center gap-2 px-6 py-3 bg-[#8b6f47] hover:bg-[#7a5f3a] text-white font-semibold rounded-lg transition">
               <Plus size={20} weight="bold" />
-              Create Display
+              Add Display
             </Link>
           </div>
 
@@ -269,7 +303,7 @@ export default function DisplaysPage() {
                 <Link
                   href="/dashboard/displays/new"
                   className="inline-block px-8 py-3 bg-[#8b6f47] hover:bg-[#7a5f3a] text-white font-semibold rounded-lg transition">
-                  Create Display
+                  Add Display
                 </Link>
               )}
             </div>
@@ -280,23 +314,35 @@ export default function DisplaysPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-[#e5e5e5] bg-[#faf9f7]">
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-black">
-                        Display ID
+                      <th
+                        onClick={() => handleColumnSort("displayId")}
+                        className="px-6 py-4 text-left text-sm font-semibold text-black cursor-pointer hover:bg-[#ede8df] transition">
+                        Display ID{getSortIndicator("displayId")}
                       </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-black">
-                        Name
+                      <th
+                        onClick={() => handleColumnSort("displayName")}
+                        className="px-6 py-4 text-left text-sm font-semibold text-black cursor-pointer hover:bg-[#ede8df] transition">
+                        Name{getSortIndicator("displayName")}
                       </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-black">
-                        Location
+                      <th
+                        onClick={() => handleColumnSort("location")}
+                        className="px-6 py-4 text-left text-sm font-semibold text-black cursor-pointer hover:bg-[#ede8df] transition">
+                        Location{getSortIndicator("location")}
                       </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-black">
-                        Resolution
+                      <th
+                        onClick={() => handleColumnSort("resolution")}
+                        className="px-6 py-4 text-left text-sm font-semibold text-black cursor-pointer hover:bg-[#ede8df] transition">
+                        Resolution{getSortIndicator("resolution")}
                       </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-black">
-                        Created By
+                      <th
+                        onClick={() => handleColumnSort("assignedAdmin")}
+                        className="px-6 py-4 text-left text-sm font-semibold text-black cursor-pointer hover:bg-[#ede8df] transition">
+                        Created By{getSortIndicator("assignedAdmin")}
                       </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-black">
-                        Status
+                      <th
+                        onClick={() => handleColumnSort("status")}
+                        className="px-6 py-4 text-left text-sm font-semibold text-black cursor-pointer hover:bg-[#ede8df] transition">
+                        Status{getSortIndicator("status")}
                       </th>
                       <th className="px-6 py-4 text-right text-sm font-semibold text-black">
                         Actions
