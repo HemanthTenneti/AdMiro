@@ -155,19 +155,39 @@ const createDisplay = async (req, res) => {
 
 /**
  * Get all displays for the current user
- * Query: { page?, limit?, status?, sortBy?, order? }
+ * Query: { page?, limit?, status?, sortBy?, order?, search? }
  * Returns: { displays, pagination, message }
  * Auth: Required
  */
 const getDisplays = async (req, res) => {
   try {
-    const { page = 1, limit = 10, status, sortBy, order = "desc" } = req.query;
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      sortBy,
+      order = "desc",
+      search,
+    } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     // Build filter - get displays assigned to current user
     const filter = { assignedAdmin: req.user.userId };
     if (status) {
       filter.status = status;
+    }
+
+    // Add search filter if search term is provided
+    if (search && search.trim()) {
+      const searchTerm = search.trim();
+      const searchRegex = new RegExp(searchTerm, "i"); // case-insensitive
+
+      filter.$or = [
+        { displayId: searchRegex },
+        { displayName: searchRegex },
+        { location: searchRegex },
+        { status: searchRegex },
+      ];
     }
 
     console.log(

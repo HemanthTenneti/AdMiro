@@ -30,6 +30,7 @@ export default function AdvertisementsPage() {
 
   // Filters and sorting
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeSearchTerm, setActiveSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [sortBy, setSortBy] = useState("createdAt");
   const [order, setOrder] = useState("desc");
@@ -53,7 +54,7 @@ export default function AdvertisementsPage() {
   useEffect(() => {
     setPage(1);
     fetchAdvertisements(1);
-  }, [statusFilter, sortBy, order]);
+  }, [statusFilter, sortBy, order, activeSearchTerm]);
 
   // Entry animation
   useEffect(() => {
@@ -81,6 +82,10 @@ export default function AdvertisementsPage() {
 
       if (statusFilter) {
         params.status = statusFilter;
+      }
+
+      if (activeSearchTerm.trim()) {
+        params.search = activeSearchTerm.trim();
       }
 
       const response = await axiosInstance.get("/api/ads", { params });
@@ -148,36 +153,22 @@ export default function AdvertisementsPage() {
     return mediaType === "video" ? "🎬" : "🖼️";
   };
 
-  // Smart search function
-  const performSearch = searchValue => {
-    setSearchTerm(searchValue);
-    // Fetch first page of results with new search term
+  const handleSearch = () => {
+    setActiveSearchTerm(searchTerm);
     setPage(1);
   };
 
-  // Apply search filtering to current page results
-  const filteredAdvertisements = searchTerm.trim()
-    ? advertisements.filter(ad => {
-        const lowercaseSearch = searchTerm.toLowerCase();
-        // Search by Ad Name
-        if (ad.adName?.toLowerCase().includes(lowercaseSearch)) return true;
-        // Search by Duration
-        if (ad.duration?.toString().includes(lowercaseSearch)) return true;
-        // Search by Status
-        if (ad.status?.toLowerCase().includes(lowercaseSearch)) return true;
-        // Search by Media Type
-        if (ad.mediaType?.toLowerCase().includes(lowercaseSearch)) return true;
-        // Search by Description (if available)
-        if (ad.description?.toLowerCase().includes(lowercaseSearch))
-          return true;
-        // Search by Views count
-        if (ad.views?.toString().includes(lowercaseSearch)) return true;
-        // Search by Clicks count
-        if (ad.clicks?.toString().includes(lowercaseSearch)) return true;
+  const handleSearchKeyPress = e => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
 
-        return false;
-      })
-    : advertisements;
+  const handleClearSearch = () => {
+    setSearchTerm("");
+    setActiveSearchTerm("");
+    setPage(1);
+  };
 
   return (
     <DashboardLayout>
@@ -215,23 +206,34 @@ export default function AdvertisementsPage() {
                 />
                 <input
                   type="text"
-                  placeholder="Search by Ad Name, Status, Type, Duration, Views, Clicks..."
+                  placeholder="Search by Ad Name, Status, Type, Duration, Description..."
                   value={searchTerm}
-                  onChange={e => performSearch(e.target.value)}
-                  className="w-full pl-12 pr-10 py-3 border-2 border-[#e5e5e5] rounded-lg focus:outline-none focus:border-[#8b6f47] focus:ring-2 focus:ring-[#8b6f47] focus:ring-opacity-20"
+                  onChange={e => setSearchTerm(e.target.value)}
+                  onKeyPress={handleSearchKeyPress}
+                  className="w-full pl-12 pr-32 py-3 border-2 border-[#e5e5e5] rounded-lg focus:outline-none focus:border-[#8b6f47] focus:ring-2 focus:ring-[#8b6f47] focus:ring-opacity-20"
                 />
-                {searchTerm && (
+                <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
+                  {searchTerm && (
+                    <button
+                      onClick={handleClearSearch}
+                      className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                      title="Clear search">
+                      <X size={18} weight="bold" />
+                    </button>
+                  )}
                   <button
-                    onClick={() => performSearch("")}
-                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                    <X size={20} weight="bold" />
+                    onClick={handleSearch}
+                    className="px-4 py-2 bg-[#8b6f47] hover:bg-[#7a5f3a] text-white font-semibold rounded-lg transition flex items-center gap-2"
+                    title="Search">
+                    <MagnifyingGlass size={18} weight="bold" />
+                    Search
                   </button>
-                )}
+                </div>
               </div>
-              {searchTerm && (
+              {activeSearchTerm && (
                 <p className="mt-2 text-sm text-gray-600">
-                  Found <strong>{advertisements.length}</strong> advertisement
-                  {advertisements.length !== 1 ? "s" : ""}
+                  Found <strong>{totalItems}</strong> advertisement
+                  {totalItems !== 1 ? "s" : ""} for "{activeSearchTerm}"
                 </p>
               )}
             </div>
@@ -304,20 +306,20 @@ export default function AdvertisementsPage() {
                 <p className="text-gray-600">Loading advertisements...</p>
               </div>
             </div>
-          ) : filteredAdvertisements.length === 0 ? (
+          ) : advertisements.length === 0 ? (
             // Empty State
             <div className="bg-white rounded-2xl border-2 border-[#e5e5e5] p-12 text-center">
               <h2 className="text-2xl font-bold text-black mb-2">
-                {searchTerm
+                {activeSearchTerm
                   ? "No advertisements found"
                   : "No advertisements yet"}
               </h2>
               <p className="text-gray-600 mb-8">
-                {searchTerm
+                {activeSearchTerm
                   ? "Try adjusting your search terms"
                   : "Create your first advertisement to start managing your campaigns."}
               </p>
-              {!searchTerm && (
+              {!activeSearchTerm && (
                 <Link
                   href="/dashboard/ads/new"
                   className="inline-block px-8 py-3 bg-[#8b6f47] hover:bg-[#7a5f3a] text-white font-semibold rounded-lg transition">
@@ -328,7 +330,7 @@ export default function AdvertisementsPage() {
           ) : (
             // Advertisements Grid
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              {filteredAdvertisements.map(ad => (
+              {advertisements.map(ad => (
                 <div
                   key={ad._id}
                   className="bg-white rounded-2xl border-2 border-[#e5e5e5] overflow-hidden hover:shadow-lg transition">
@@ -520,11 +522,11 @@ export default function AdvertisementsPage() {
                 Showing{" "}
                 <strong>
                   {(page - 1) * itemsPerPage + 1}-
-                  {(page - 1) * itemsPerPage + filteredAdvertisements.length}
+                  {(page - 1) * itemsPerPage + advertisements.length}
                 </strong>{" "}
                 of <strong>{totalItems}</strong> advertisement
                 {totalItems !== 1 ? "s" : ""}
-                {searchTerm && ` (searched)`}
+                {activeSearchTerm && ` (filtered)`}
               </p>
             </div>
           )}

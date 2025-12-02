@@ -97,13 +97,13 @@ export default function DashboardLayout({ children }) {
                     setSidebarOpen(false);
                     setProfileMenuOpen(false);
                   }}
-                  className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition group">
+                  className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 rounded-lg transition group">
                   <IconComponent
                     size={20}
                     className="text-gray-600 group-hover:text-[#8b6f47]"
                     weight="bold"
                   />
-                  <span className="font-medium group-hover:text-[#8b6f47]">
+                  <span className="font-medium text-gray-600 group-hover:text-[#8b6f47]">
                     {item.label}
                   </span>
                 </Link>

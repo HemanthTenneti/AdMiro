@@ -6,7 +6,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import axiosInstance from "@/lib/axiosConfig";
 import DashboardLayout from "@/components/DashboardLayout";
-import { ArrowLeft, Trash, Funnel } from "phosphor-react";
+import { ArrowLeft, Trash, Funnel, MagnifyingGlass, X } from "phosphor-react";
 
 export default function LogsPage() {
   const router = useRouter();
@@ -21,7 +21,8 @@ export default function LogsPage() {
   // Filters
   const [actionFilter, setActionFilter] = useState("");
   const [entityTypeFilter, setEntityTypeFilter] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeSearchTerm, setActiveSearchTerm] = useState("");
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -42,6 +43,8 @@ export default function LogsPage() {
 
         if (actionFilter) url += `&action=${actionFilter}`;
         if (entityTypeFilter) url += `&entityType=${entityTypeFilter}`;
+        if (activeSearchTerm.trim())
+          url += `&search=${encodeURIComponent(activeSearchTerm.trim())}`;
 
         const response = await axiosInstance.get(url);
         const data = response.data?.data || {};
@@ -58,7 +61,24 @@ export default function LogsPage() {
     };
 
     fetchLogs();
-  }, [currentPage, actionFilter, entityTypeFilter, pageSize]);
+  }, [currentPage, actionFilter, entityTypeFilter, activeSearchTerm, pageSize]);
+
+  const handleSearch = () => {
+    setActiveSearchTerm(searchTerm);
+    setCurrentPage(1);
+  };
+
+  const handleSearchKeyPress = e => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchTerm("");
+    setActiveSearchTerm("");
+    setCurrentPage(1);
+  };
 
   const handleDeleteLog = async logId => {
     try {
@@ -134,8 +154,50 @@ export default function LogsPage() {
         </p>
       </div>
 
-      {/* Filters */}
+      {/* Search and Filters */}
       <div className="rounded-lg border border-gray-200 bg-white p-6 mb-8 shadow-sm">
+        {/* Search Bar */}
+        <div className="mb-6">
+          <div className="relative">
+            <MagnifyingGlass
+              size={20}
+              className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"
+              weight="bold"
+            />
+            <input
+              type="text"
+              placeholder="Search logs by description, user, entity type, action..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              onKeyPress={handleSearchKeyPress}
+              className="w-full pl-12 pr-32 py-3 border-2 border-[#e5e5e5] rounded-lg focus:outline-none focus:border-[#8b6f47] focus:ring-2 focus:ring-[#8b6f47] focus:ring-opacity-20"
+            />
+            <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
+              {searchTerm && (
+                <button
+                  onClick={handleClearSearch}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                  title="Clear search">
+                  <X size={18} weight="bold" />
+                </button>
+              )}
+              <button
+                onClick={handleSearch}
+                className="px-4 py-2 bg-[#8b6f47] hover:bg-[#7a5f3a] text-white font-semibold rounded-lg transition flex items-center gap-2"
+                title="Search">
+                <MagnifyingGlass size={18} weight="bold" />
+                Search
+              </button>
+            </div>
+          </div>
+          {activeSearchTerm && (
+            <p className="mt-2 text-sm text-gray-600">
+              Found <strong>{total}</strong> log
+              {total !== 1 ? "s" : ""} for "{activeSearchTerm}"
+            </p>
+          )}
+        </div>
+
         <div className="flex items-center gap-2 mb-4">
           <Funnel size={20} className="text-gray-600" />
           <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
@@ -192,10 +254,12 @@ export default function LogsPage() {
               onClick={() => {
                 setActionFilter("");
                 setEntityTypeFilter("");
+                setSearchTerm("");
+                setActiveSearchTerm("");
                 setCurrentPage(1);
               }}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium text-gray-700">
-              Clear Filters
+              Clear All Filters
             </button>
           </div>
         </div>
@@ -219,8 +283,8 @@ export default function LogsPage() {
           <div className="flex flex-col items-center justify-center py-12">
             <p className="text-gray-500 text-lg mb-2">No logs found</p>
             <p className="text-gray-400 text-sm">
-              {actionFilter || entityTypeFilter
-                ? "Try adjusting your filters"
+              {actionFilter || entityTypeFilter || activeSearchTerm
+                ? "Try adjusting your filters or search terms"
                 : "System activity will appear here"}
             </p>
           </div>

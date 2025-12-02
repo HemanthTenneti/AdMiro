@@ -194,6 +194,7 @@ const getAdvertisements = async (req, res) => {
       page = 1,
       limit = 10,
       status,
+      search,
       sortBy = "createdAt",
       order = "desc",
     } = req.query;
@@ -206,6 +207,18 @@ const getAdvertisements = async (req, res) => {
       ["active", "scheduled", "paused", "expired", "draft"].includes(status)
     ) {
       filter.status = status;
+    }
+
+    // Add search filter
+    if (search && search.trim()) {
+      const searchRegex = new RegExp(search.trim(), "i");
+      filter.$or = [
+        { adName: searchRegex },
+        { description: searchRegex },
+        { mediaType: searchRegex },
+        { status: searchRegex },
+        { adId: searchRegex },
+      ];
     }
 
     // Build sort

@@ -53,7 +53,7 @@ export default function AnalyticsPage() {
   if (loading) {
     return (
       <DashboardLayout>
-        <main className="min-h-screen bg-linear-to-br from-[#faf9f7] to-[#f5f3f0] p-8">
+        <main className="min-h-screen p-8">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <CircleNotch
@@ -71,7 +71,7 @@ export default function AnalyticsPage() {
 
   return (
     <DashboardLayout>
-      <main className="min-h-screen bg-linear-to-br from-[#faf9f7] to-[#f5f3f0] p-8">
+      <main className="min-h-screen p-8">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-8">

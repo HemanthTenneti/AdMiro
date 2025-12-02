@@ -166,27 +166,65 @@ const createDisplayLoop = async (req, res) => {
  */
 const getAllLoops = async (req, res) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 10, search, sortBy, order = "desc" } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const userId = req.user.userId?.toString?.() || req.user.userId;
 
     // Get all displays owned by the user
     const userDisplays = await Display.find({ assignedAdmin: userId }).select(
-      "_id"
+      "_id displayName"
     );
     const displayIds = userDisplays.map(d => d._id);
 
+    // Build filter
+    const filter = { displayId: { $in: displayIds } };
+
+    // Add search filter
+    if (search && search.trim()) {
+      const searchRegex = new RegExp(search.trim(), "i");
+
+      // Search in loop name or rotation type
+      const loopFilter = {
+        $or: [
+          { loopName: searchRegex },
+          { rotationType: searchRegex },
+          { loopId: searchRegex },
+        ],
+      };
+
+      // Also search in display names
+      const matchingDisplays = userDisplays.filter(d =>
+        searchRegex.test(d.displayName)
+      );
+      if (matchingDisplays.length > 0) {
+        loopFilter.$or.push({
+          displayId: { $in: matchingDisplays.map(d => d._id) },
+        });
+      }
+
+      filter.$and = [filter, loopFilter];
+    }
+
+    // Build sort
+    const sortObj = {};
+    const validSortFields = [
+      "loopName",
+      "displayName",
+      "rotationType",
+      "createdAt",
+    ];
+    const sortField = validSortFields.includes(sortBy) ? sortBy : "createdAt";
+    sortObj[sortField] = order === "asc" ? 1 : -1;
+
     // Get all loops for user's displays
-    const loops = await DisplayLoop.find({ displayId: { $in: displayIds } })
+    const loops = await DisplayLoop.find(filter)
       .skip(skip)
       .limit(parseInt(limit))
       .populate("displayId", "displayName location")
       .populate("advertisements.adId", "adName mediaType duration mediaUrl")
-      .sort({ createdAt: -1 });
+      .sort(sortObj);
 
-    const total = await DisplayLoop.countDocuments({
-      displayId: { $in: displayIds },
-    });
+    const total = await DisplayLoop.countDocuments(filter);
 
     // Add display name to each loop for easier frontend access
     const loopsWithDisplayNames = loops.map(loop => ({

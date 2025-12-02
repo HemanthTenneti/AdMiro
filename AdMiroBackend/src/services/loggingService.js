@@ -42,6 +42,17 @@ export const getLogs = async (filters = {}, page = 1, limit = 10) => {
     if (filters.userId) query.userId = filters.userId;
     if (filters.entityId) query.entityId = filters.entityId;
 
+    // Search filter
+    if (filters.search && filters.search.trim()) {
+      const searchRegex = new RegExp(filters.search.trim(), "i");
+      query.$or = [
+        { "details.description": searchRegex },
+        { action: searchRegex },
+        { entityType: searchRegex },
+        { ipAddress: searchRegex },
+      ];
+    }
+
     // Date range filter
     if (filters.startDate || filters.endDate) {
       query.createdAt = {};

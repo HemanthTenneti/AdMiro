@@ -5,13 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import axiosInstance from "@/lib/axiosConfig";
 import DashboardLayout from "@/components/DashboardLayout";
-import {
-  CircleNotch,
-  ArrowLeft,
-  Plus,
-  Trash,
-  Monitor,
-} from "phosphor-react";
+import { CircleNotch, ArrowLeft, Plus, Trash, Monitor } from "phosphor-react";
 
 export default function CreateLoopPage() {
   const router = useRouter();
@@ -149,7 +143,7 @@ export default function CreateLoopPage() {
 
   return (
     <DashboardLayout>
-      <div className="flex-1 overflow-auto bg-gradient-to-br from-[#faf9f7] to-[#f5f3f0]">
+      <div className="flex-1 overflow-auto">
         <div className="max-w-4xl mx-auto px-4 py-8">
           {/* Header */}
           <div className="mb-8 flex items-center gap-4">
@@ -159,9 +153,7 @@ export default function CreateLoopPage() {
               <ArrowLeft size={24} weight="bold" />
             </button>
             <div>
-              <h1 className="text-4xl font-bold text-black">
-                Create New Loop
-              </h1>
+              <h1 className="text-4xl font-bold text-black">Create New Loop</h1>
               <p className="text-gray-600">
                 Build a playlist of advertisements for your display
               </p>

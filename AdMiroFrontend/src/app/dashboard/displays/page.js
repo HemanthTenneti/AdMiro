@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -24,11 +24,11 @@ export default function DisplaysPage() {
   const router = useRouter();
   const mainRef = useRef(null);
   const [displays, setDisplays] = useState([]);
-  const [allDisplays, setAllDisplays] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeSearchTerm, setActiveSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -37,6 +37,58 @@ export default function DisplaysPage() {
   const [sortBy, setSortBy] = useState(null);
   const [sortOrder, setSortOrder] = useState("none"); // "none", "asc", "desc"
   const itemsPerPage = 8;
+
+  const fetchDisplays = useCallback(
+    async (pageNum = 1) => {
+      try {
+        setLoading(true);
+        setError("");
+        console.log(`📤 Fetching displays - Page ${pageNum}...`);
+
+        const params = {
+          page: pageNum,
+          limit: itemsPerPage,
+        };
+
+        // Add search parameter if there's a search term
+        if (activeSearchTerm.trim()) {
+          params.search = activeSearchTerm.trim();
+        }
+
+        // Add sorting parameters if a column is sorted
+        if (sortBy && sortOrder !== "none") {
+          params.sortBy = sortBy;
+          params.order = sortOrder === "asc" ? "asc" : "desc";
+        }
+
+        const response = await axiosInstance.get("/api/displays", {
+          params,
+        });
+        console.log("✅ Displays fetched:", response.data);
+
+        setDisplays(response.data.data.displays || []);
+
+        // Set pagination info from backend response
+        const pagination = response.data.data.pagination;
+        if (pagination) {
+          setTotalPages(pagination.totalPages);
+          setTotalItems(pagination.total);
+        }
+      } catch (err) {
+        console.error("❌ Error fetching displays:", err);
+        const errorMessage =
+          err.response?.data?.message ||
+          err.message ||
+          "Failed to fetch displays.";
+        setError(errorMessage);
+        toast.error(errorMessage);
+        setDisplays([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [activeSearchTerm, itemsPerPage, sortBy, sortOrder]
+  );
 
   // Check auth and fetch displays
   useEffect(() => {
@@ -47,7 +99,7 @@ export default function DisplaysPage() {
     }
 
     fetchDisplays(page);
-  }, [router, page, sortBy, sortOrder]);
+  }, [router, page, fetchDisplays]);
 
   // Entry animation
   useEffect(() => {
@@ -60,52 +112,6 @@ export default function DisplaysPage() {
     }
   }, [loading]);
 
-  const fetchDisplays = async (pageNum = 1) => {
-    try {
-      setLoading(true);
-      setError("");
-      console.log(`📤 Fetching displays - Page ${pageNum}...`);
-
-      const params = {
-        page: pageNum,
-        limit: itemsPerPage,
-      };
-
-      // Add sorting parameters if a column is sorted
-      if (sortBy && sortOrder !== "none") {
-        params.sortBy = sortBy;
-        params.order = sortOrder === "asc" ? "asc" : "desc";
-      }
-
-      const response = await axiosInstance.get("/api/displays", {
-        params,
-      });
-      console.log("✅ Displays fetched:", response.data);
-
-      setDisplays(response.data.data.displays || []);
-      setAllDisplays(response.data.data.displays || []);
-
-      // Set pagination info from backend response
-      const pagination = response.data.data.pagination;
-      if (pagination) {
-        setTotalPages(pagination.totalPages);
-        setTotalItems(pagination.total);
-      }
-    } catch (err) {
-      console.error("❌ Error fetching displays:", err);
-      const errorMessage =
-        err.response?.data?.message ||
-        err.message ||
-        "Failed to fetch displays.";
-      setError(errorMessage);
-      toast.error(errorMessage);
-      setDisplays([]);
-      setAllDisplays([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleDelete = async displayId => {
     try {
       setDeleteLoading(displayId);
@@ -114,10 +120,11 @@ export default function DisplaysPage() {
       await axiosInstance.delete(`/api/displays/${displayId}`);
       console.log("✅ Display deleted");
 
-      // Remove from local state
-      setDisplays(displays.filter(d => d._id !== displayId));
       toast.success("Display deleted successfully!");
       setDeleteConfirmId(null);
+
+      // Refetch displays to update the list and pagination
+      fetchDisplays(page);
     } catch (err) {
       console.error("❌ Error deleting display:", err);
       const errorMessage =
@@ -160,6 +167,23 @@ export default function DisplaysPage() {
     return "";
   };
 
+  const handleSearch = () => {
+    setActiveSearchTerm(searchTerm);
+    setPage(1);
+  };
+
+  const handleSearchKeyPress = e => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchTerm("");
+    setActiveSearchTerm("");
+    setPage(1);
+  };
+
   const getStatusColor = status => {
     switch (status) {
       case "online":
@@ -173,56 +197,9 @@ export default function DisplaysPage() {
     }
   };
 
-  // Smart search function - client side on current page
-  const performSearch = searchValue => {
-    setSearchTerm(searchValue);
-    // Search is now done client-side on the displays loaded from server
-  };
-
-  // Filter displays based on search term (client-side)
-  const filteredDisplays = searchTerm.trim()
-    ? displays.filter(display => {
-        const lowercaseSearch = searchTerm.toLowerCase();
-        // Search by Display ID
-        if (display.displayId?.toLowerCase().includes(lowercaseSearch))
-          return true;
-        // Search by Display Name
-        if (display.displayName?.toLowerCase().includes(lowercaseSearch))
-          return true;
-        // Search by Location
-        if (display.location?.toLowerCase().includes(lowercaseSearch))
-          return true;
-        // Search by Created By
-        const createdBy = display.assignedAdmin?.firstName || "";
-        const lastName = display.assignedAdmin?.lastName || "";
-        const username = display.assignedAdmin?.username || "";
-        if (
-          createdBy.toLowerCase().includes(lowercaseSearch) ||
-          lastName.toLowerCase().includes(lowercaseSearch) ||
-          username.toLowerCase().includes(lowercaseSearch)
-        ) {
-          return true;
-        }
-        // Search by Resolution
-        if (
-          `${display.resolution.width}x${display.resolution.height}`
-            .toLowerCase()
-            .includes(lowercaseSearch)
-        ) {
-          return true;
-        }
-        // Search by Status
-        if (display.status?.toLowerCase().includes(lowercaseSearch))
-          return true;
-        return false;
-      })
-    : displays;
-
   return (
     <DashboardLayout>
-      <main
-        ref={mainRef}
-        className="min-h-screen bg-linear-to-br from-[#faf9f7] to-[#f5f3f0] p-8">
+      <main ref={mainRef} className="min-h-screen p-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
@@ -250,21 +227,32 @@ export default function DisplaysPage() {
                 type="text"
                 placeholder="Search by Display ID, Name, Location, Creator, Resolution, or Status..."
                 value={searchTerm}
-                onChange={e => performSearch(e.target.value)}
-                className="w-full pl-12 pr-10 py-3 border-2 border-[#e5e5e5] rounded-lg focus:outline-none focus:border-[#8b6f47] focus:ring-2 focus:ring-[#8b6f47] focus:ring-opacity-20"
+                onChange={e => setSearchTerm(e.target.value)}
+                onKeyPress={handleSearchKeyPress}
+                className="w-full pl-12 pr-32 py-3 border-2 border-[#e5e5e5] rounded-lg focus:outline-none focus:border-[#8b6f47] focus:ring-2 focus:ring-[#8b6f47] focus:ring-opacity-20"
               />
-              {searchTerm && (
+              <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
+                {searchTerm && (
+                  <button
+                    onClick={handleClearSearch}
+                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                    title="Clear search">
+                    <X size={18} weight="bold" />
+                  </button>
+                )}
                 <button
-                  onClick={() => performSearch("")}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                  <X size={20} weight="bold" />
+                  onClick={handleSearch}
+                  className="px-4 py-2 bg-[#8b6f47] hover:bg-[#7a5f3a] text-white font-semibold rounded-lg transition flex items-center gap-2"
+                  title="Search">
+                  <MagnifyingGlass size={18} weight="bold" />
+                  Search
                 </button>
-              )}
+              </div>
             </div>
-            {searchTerm && (
+            {activeSearchTerm && (
               <p className="mt-2 text-sm text-gray-600">
-                Found <strong>{displays.length}</strong> display
-                {displays.length !== 1 ? "s" : ""}
+                Found <strong>{totalItems}</strong> display
+                {totalItems !== 1 ? "s" : ""} for "{activeSearchTerm}"
               </p>
             )}
           </div>
@@ -288,18 +276,18 @@ export default function DisplaysPage() {
                 <p className="text-gray-600">Loading your displays...</p>
               </div>
             </div>
-          ) : filteredDisplays.length === 0 ? (
+          ) : displays.length === 0 ? (
             // Empty State
             <div className="bg-white rounded-2xl border-2 border-[#e5e5e5] p-12 text-center">
               <h2 className="text-2xl font-bold text-black mb-2">
-                {searchTerm ? "No displays found" : "No displays yet"}
+                {activeSearchTerm ? "No displays found" : "No displays yet"}
               </h2>
               <p className="text-gray-600 mb-8">
-                {searchTerm
+                {activeSearchTerm
                   ? "Try adjusting your search terms"
                   : "Create your first display to get started managing your digital signage."}
               </p>
-              {!searchTerm && (
+              {!activeSearchTerm && (
                 <Link
                   href="/dashboard/displays/new"
                   className="inline-block px-8 py-3 bg-[#8b6f47] hover:bg-[#7a5f3a] text-white font-semibold rounded-lg transition">
@@ -350,7 +338,7 @@ export default function DisplaysPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredDisplays.map((display, index) => (
+                    {displays.map((display, index) => (
                       <tr
                         key={display._id}
                         className="border-b border-[#e5e5e5] hover:bg-[#faf9f7] transition">
@@ -556,11 +544,11 @@ export default function DisplaysPage() {
                   Showing{" "}
                   <strong>
                     {(page - 1) * itemsPerPage + 1}-
-                    {(page - 1) * itemsPerPage + filteredDisplays.length}
+                    {(page - 1) * itemsPerPage + displays.length}
                   </strong>{" "}
                   of <strong>{totalItems}</strong> display
                   {totalItems !== 1 ? "s" : ""}
-                  {searchTerm && ` (searched)`}
+                  {activeSearchTerm && ` (filtered)`}
                 </p>
               </div>
             </div>

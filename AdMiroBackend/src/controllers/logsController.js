@@ -55,6 +55,7 @@ export const getLogs = async (req, res) => {
       action,
       userId,
       entityId,
+      search,
       startDate,
       endDate,
     } = req.query;
@@ -64,6 +65,7 @@ export const getLogs = async (req, res) => {
     if (action) filters.action = action;
     if (userId) filters.userId = userId;
     if (entityId) filters.entityId = entityId;
+    if (search) filters.search = search;
     if (startDate || endDate) {
       filters.startDate = startDate;
       filters.endDate = endDate;

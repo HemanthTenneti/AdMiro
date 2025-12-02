@@ -12,6 +12,12 @@ import {
   PencilSimple,
   CircleNotch,
   Monitor,
+  MagnifyingGlass,
+  X,
+  CaretLeft,
+  CaretRight,
+  CaretUp,
+  CaretDown,
 } from "phosphor-react";
 import gsap from "gsap";
 
@@ -27,6 +33,16 @@ export default function LoopsPage() {
   const [assignLoading, setAssignLoading] = useState(null);
   const [openDropdown, setOpenDropdown] = useState(null);
 
+  // Search, Sort, and Pagination
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeSearchTerm, setActiveSearchTerm] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [sortBy, setSortBy] = useState(null);
+  const [sortOrder, setSortOrder] = useState("none");
+  const itemsPerPage = 10;
+
   // Check auth and fetch loops
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
@@ -35,9 +51,9 @@ export default function LoopsPage() {
       return;
     }
 
-    fetchLoops();
+    fetchLoops(page);
     fetchDisplays();
-  }, [router]);
+  }, [router, page, activeSearchTerm, sortBy, sortOrder]);
 
   // Entry animation
   useEffect(() => {
@@ -50,16 +66,36 @@ export default function LoopsPage() {
     }
   }, [loading]);
 
-  const fetchLoops = async () => {
+  const fetchLoops = async (pageNum = 1) => {
     try {
       setLoading(true);
       setError("");
       console.log("📤 Fetching loops...");
 
-      const response = await axiosInstance.get("/api/loops?limit=1000");
+      const params = {
+        page: pageNum,
+        limit: itemsPerPage,
+      };
+
+      if (activeSearchTerm.trim()) {
+        params.search = activeSearchTerm.trim();
+      }
+
+      if (sortBy && sortOrder !== "none") {
+        params.sortBy = sortBy;
+        params.order = sortOrder === "asc" ? "asc" : "desc";
+      }
+
+      const response = await axiosInstance.get("/api/loops", { params });
       console.log("✅ Loops fetched:", response.data);
 
       setLoops(response.data.data.loops || []);
+
+      const pagination = response.data.data.pagination;
+      if (pagination) {
+        setTotalPages(pagination.totalPages);
+        setTotalItems(pagination.total);
+      }
     } catch (err) {
       console.error("❌ Error fetching loops:", err);
       const errorMessage =
@@ -81,6 +117,49 @@ export default function LoopsPage() {
     } catch (err) {
       console.error("❌ Error fetching displays:", err);
     }
+  };
+
+  const handleSearch = () => {
+    setActiveSearchTerm(searchTerm);
+    setPage(1);
+  };
+
+  const handleSearchKeyPress = e => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchTerm("");
+    setActiveSearchTerm("");
+    setPage(1);
+  };
+
+  const handleSort = field => {
+    if (sortBy === field) {
+      if (sortOrder === "asc") {
+        setSortOrder("desc");
+      } else if (sortOrder === "desc") {
+        setSortBy(null);
+        setSortOrder("none");
+      } else {
+        setSortOrder("asc");
+      }
+    } else {
+      setSortBy(field);
+      setSortOrder("asc");
+    }
+    setPage(1);
+  };
+
+  const getSortIcon = field => {
+    if (sortBy !== field || sortOrder === "none") return null;
+    return sortOrder === "asc" ? (
+      <CaretUp size={16} weight="bold" />
+    ) : (
+      <CaretDown size={16} weight="bold" />
+    );
   };
 
   const handleDelete = async loopId => {
@@ -153,9 +232,7 @@ export default function LoopsPage() {
 
   return (
     <DashboardLayout>
-      <main
-        ref={mainRef}
-        className="min-h-screen bg-gradient-to-br from-[#faf9f7] to-[#f5f3f0] p-8">
+      <main ref={mainRef} className="min-h-screen p-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
@@ -182,6 +259,48 @@ export default function LoopsPage() {
             </div>
           )}
 
+          {/* Search Bar */}
+          <div className="mb-8">
+            <div className="relative">
+              <MagnifyingGlass
+                size={20}
+                className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"
+                weight="bold"
+              />
+              <input
+                type="text"
+                placeholder="Search by Loop Name, Display Name, Rotation Type..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                onKeyPress={handleSearchKeyPress}
+                className="w-full pl-12 pr-32 py-3 border-2 border-[#e5e5e5] rounded-lg focus:outline-none focus:border-[#8b6f47] focus:ring-2 focus:ring-[#8b6f47] focus:ring-opacity-20"
+              />
+              <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
+                {searchTerm && (
+                  <button
+                    onClick={handleClearSearch}
+                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                    title="Clear search">
+                    <X size={18} weight="bold" />
+                  </button>
+                )}
+                <button
+                  onClick={handleSearch}
+                  className="px-4 py-2 bg-[#8b6f47] hover:bg-[#7a5f3a] text-white font-semibold rounded-lg transition flex items-center gap-2"
+                  title="Search">
+                  <MagnifyingGlass size={18} weight="bold" />
+                  Search
+                </button>
+              </div>
+            </div>
+            {activeSearchTerm && (
+              <p className="mt-2 text-sm text-gray-600">
+                Found <strong>{totalItems}</strong> loop
+                {totalItems !== 1 ? "s" : ""} for "{activeSearchTerm}"
+              </p>
+            )}
+          </div>
+
           {/* Loading State */}
           {loading ? (
             <div className="flex items-center justify-center h-64">
@@ -198,17 +317,20 @@ export default function LoopsPage() {
             // Empty State
             <div className="bg-white rounded-2xl border-2 border-[#e5e5e5] p-12 text-center">
               <h2 className="text-2xl font-bold text-black mb-2">
-                No loops yet
+                {activeSearchTerm ? "No loops found" : "No loops yet"}
               </h2>
               <p className="text-gray-600 mb-8">
-                Create your first display loop to start managing advertisement
-                playlists across your displays.
+                {activeSearchTerm
+                  ? "Try adjusting your search terms"
+                  : "Create your first display loop to start managing advertisement playlists across your displays."}
               </p>
-              <Link
-                href="/dashboard/displays"
-                className="inline-block px-8 py-3 bg-[#8b6f47] hover:bg-[#7a5f3a] text-white font-semibold rounded-lg transition">
-                Go to Displays to Create Loop
-              </Link>
+              {!activeSearchTerm && (
+                <Link
+                  href="/dashboard/loops/new"
+                  className="inline-block px-8 py-3 bg-[#8b6f47] hover:bg-[#7a5f3a] text-white font-semibold rounded-lg transition">
+                  Create Display Loop
+                </Link>
+              )}
             </div>
           ) : (
             // Loops Table
@@ -218,13 +340,25 @@ export default function LoopsPage() {
                   <thead>
                     <tr className="border-b border-[#e5e5e5] bg-[#faf9f7]">
                       <th className="px-6 py-4 text-left text-sm font-semibold text-black">
-                        Loop Name
+                        <button
+                          onClick={() => handleSort("loopName")}
+                          className="flex items-center gap-2 hover:text-[#8b6f47] transition">
+                          Loop Name {getSortIcon("loopName")}
+                        </button>
                       </th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-black">
-                        Display
+                        <button
+                          onClick={() => handleSort("displayName")}
+                          className="flex items-center gap-2 hover:text-[#8b6f47] transition">
+                          Display {getSortIcon("displayName")}
+                        </button>
                       </th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-black">
-                        Rotation Type
+                        <button
+                          onClick={() => handleSort("rotationType")}
+                          className="flex items-center gap-2 hover:text-[#8b6f47] transition">
+                          Rotation Type {getSortIcon("rotationType")}
+                        </button>
                       </th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-black">
                         Advertisements
@@ -272,7 +406,9 @@ export default function LoopsPage() {
                                       key={idx}
                                       className="text-sm text-gray-600">
                                       {idx + 1}.{" "}
-                                      {ad.adId?.adName || ad.adName || "Unknown Ad"}
+                                      {ad.adId?.adName ||
+                                        ad.adName ||
+                                        "Unknown Ad"}
                                     </div>
                                   ))}
                                 {loop.advertisements.length > 2 && (
@@ -363,12 +499,97 @@ export default function LoopsPage() {
             </div>
           )}
 
-          {/* Loops Count */}
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex flex-col items-center gap-6 mb-6 mt-12">
+              <div className="flex items-center justify-center gap-1 flex-wrap">
+                {/* Previous Button */}
+                <button
+                  onClick={() => setPage(Math.max(1, page - 1))}
+                  disabled={page === 1}
+                  className="p-2 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed text-[#8b6f47] hover:bg-[#f0ede9]">
+                  <CaretLeft size={20} weight="bold" />
+                </button>
+
+                <div className="flex items-center gap-1">
+                  {/* First Page */}
+                  {page > 3 && (
+                    <>
+                      <button
+                        onClick={() => setPage(1)}
+                        className="px-3 py-2 rounded-md font-semibold transition text-sm bg-[#f0ede9] text-black hover:bg-[#e5d9c8]">
+                        1
+                      </button>
+                      {page > 4 && (
+                        <span className="px-2 text-gray-400 text-lg">···</span>
+                      )}
+                    </>
+                  )}
+
+                  {/* Page Range Around Current */}
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const startPage = Math.max(
+                      1,
+                      Math.min(page - 2, totalPages - 4)
+                    );
+                    return startPage + i;
+                  }).map(pageNum => (
+                    <button
+                      key={pageNum}
+                      onClick={() => setPage(pageNum)}
+                      className={`px-3 py-2 rounded-md font-semibold transition text-sm ${
+                        page === pageNum
+                          ? "bg-[#8b6f47] text-white shadow-md"
+                          : "bg-[#f0ede9] text-black hover:bg-[#e5d9c8]"
+                      }`}>
+                      {pageNum}
+                    </button>
+                  ))}
+
+                  {/* Last Page */}
+                  {page < totalPages - 2 && (
+                    <>
+                      {page < totalPages - 3 && (
+                        <span className="px-2 text-gray-400 text-lg">···</span>
+                      )}
+                      <button
+                        onClick={() => setPage(totalPages)}
+                        className="px-3 py-2 rounded-md font-semibold transition text-sm bg-[#f0ede9] text-black hover:bg-[#e5d9c8]">
+                        {totalPages}
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {/* Next Button */}
+                <button
+                  onClick={() => setPage(Math.min(totalPages, page + 1))}
+                  disabled={page === totalPages}
+                  className="p-2 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed text-[#8b6f47] hover:bg-[#f0ede9]">
+                  <CaretRight size={20} weight="bold" />
+                </button>
+              </div>
+
+              {/* Page Info */}
+              <div className="text-xs tracking-wide text-gray-500 uppercase">
+                Page <span className="text-[#8b6f47] font-bold">{page}</span> of{" "}
+                <span className="text-[#8b6f47] font-bold">{totalPages}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Count Summary */}
           {loops.length > 0 && (
-            <div className="mt-6 text-center text-gray-600">
+            <div className="text-center text-gray-600">
               <p>
-                Showing <strong>{loops.length}</strong> loop
-                {loops.length !== 1 ? "s" : ""}
+                Showing{" "}
+                <strong>
+                  {(page - 1) * itemsPerPage + 1}-
+                  {(page - 1) * itemsPerPage + loops.length}
+                </strong>{" "}
+                of <strong>{totalItems}</strong> loop
+                {totalItems !== 1 ? "s" : ""}
+                {activeSearchTerm && ` (filtered)`}
               </p>
             </div>
           )}
