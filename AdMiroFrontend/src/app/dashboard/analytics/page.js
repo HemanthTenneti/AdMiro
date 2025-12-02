@@ -117,7 +117,7 @@ export default function AnalyticsPage() {
             <div className="bg-white rounded-b-2xl border-2 border-[#e5e5e5] border-t-0 p-8">
               {/* Summary Cards */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border border-blue-200">
+                <div className="bg-linear-to-br from-blue-50 to-blue-100 rounded-xl p-6 border border-blue-200">
                   <p className="text-gray-600 text-sm font-semibold mb-2">
                     Total Displays
                   </p>
@@ -126,7 +126,7 @@ export default function AnalyticsPage() {
                   </p>
                 </div>
 
-                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border border-green-200">
+                <div className="bg-linear-to-br from-green-50 to-green-100 rounded-xl p-6 border border-green-200">
                   <p className="text-gray-600 text-sm font-semibold mb-2">
                     Online
                   </p>
@@ -142,7 +142,7 @@ export default function AnalyticsPage() {
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-6 border border-red-200">
+                <div className="bg-linear-to-br from-red-50 to-red-100 rounded-xl p-6 border border-red-200">
                   <p className="text-gray-600 text-sm font-semibold mb-2">
                     Offline
                   </p>
@@ -154,7 +154,7 @@ export default function AnalyticsPage() {
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-6 border border-yellow-200">
+                <div className="bg-linear-to-br from-yellow-50 to-yellow-100 rounded-xl p-6 border border-yellow-200">
                   <p className="text-gray-600 text-sm font-semibold mb-2">
                     Inactive
                   </p>
@@ -184,9 +184,6 @@ export default function AnalyticsPage() {
                       </th>
                       <th className="text-left py-4 px-4 font-semibold text-gray-700">
                         Status
-                      </th>
-                      <th className="text-left py-4 px-4 font-semibold text-gray-700">
-                        Connection
                       </th>
                       <th className="text-left py-4 px-4 font-semibold text-gray-700">
                         Resolution
@@ -232,16 +229,6 @@ export default function AnalyticsPage() {
                           </span>
                         </td>
                         <td className="py-4 px-4">
-                          <span
-                            className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${
-                              display.isConnected
-                                ? "bg-green-100 text-green-700"
-                                : "bg-gray-100 text-gray-700"
-                            }`}>
-                            {display.isConnected ? "Connected" : "Disconnected"}
-                          </span>
-                        </td>
-                        <td className="py-4 px-4">
                           <p className="text-gray-700 font-mono text-sm">
                             {display.resolution}
                           </p>
@@ -249,7 +236,17 @@ export default function AnalyticsPage() {
                         <td className="py-4 px-4">
                           <p className="text-gray-600 text-sm">
                             {display.lastSeen
-                              ? new Date(display.lastSeen).toLocaleDateString()
+                              ? new Date(display.lastSeen).toLocaleString(
+                                  "en-US",
+                                  {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    second: "2-digit",
+                                  }
+                                )
                               : "Never"}
                           </p>
                         </td>
@@ -277,7 +274,7 @@ export default function AnalyticsPage() {
             <div className="bg-white rounded-b-2xl border-2 border-[#e5e5e5] border-t-0 p-8">
               {/* Summary Cards */}
               <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border border-blue-200">
+                <div className="bg-linear-to-br from-blue-50 to-blue-100 rounded-xl p-6 border border-blue-200">
                   <p className="text-gray-600 text-sm font-semibold mb-2">
                     Total Ads
                   </p>
@@ -286,7 +283,7 @@ export default function AnalyticsPage() {
                   </p>
                 </div>
 
-                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border border-green-200">
+                <div className="bg-linear-to-br from-green-50 to-green-100 rounded-xl p-6 border border-green-200">
                   <p className="text-gray-600 text-sm font-semibold mb-2">
                     Active
                   </p>
@@ -295,7 +292,7 @@ export default function AnalyticsPage() {
                   </p>
                 </div>
 
-                <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-6 border border-yellow-200">
+                <div className="bg-linear-to-br from-yellow-50 to-yellow-100 rounded-xl p-6 border border-yellow-200">
                   <p className="text-gray-600 text-sm font-semibold mb-2">
                     Paused
                   </p>
@@ -304,7 +301,7 @@ export default function AnalyticsPage() {
                   </p>
                 </div>
 
-                <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-6 border border-red-200">
+                <div className="bg-linear-to-br from-red-50 to-red-100 rounded-xl p-6 border border-red-200">
                   <p className="text-gray-600 text-sm font-semibold mb-2">
                     Expired
                   </p>
@@ -313,7 +310,7 @@ export default function AnalyticsPage() {
                   </p>
                 </div>
 
-                <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 border border-purple-200">
+                <div className="bg-linear-to-br from-purple-50 to-purple-100 rounded-xl p-6 border border-purple-200">
                   <p className="text-gray-600 text-sm font-semibold mb-2">
                     Total Impressions
                   </p>

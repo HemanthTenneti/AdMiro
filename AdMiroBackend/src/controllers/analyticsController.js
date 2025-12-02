@@ -137,15 +137,59 @@ export const getDisplaysStatusSummary = async (req, res) => {
     // Get all displays for this user
     const displays = await Display.find({ assignedAdmin: userId });
 
-    const onlineCount = displays.filter(d => d.status === "online").length;
-    const offlineCount = displays.filter(d => d.status === "offline").length;
-    const inactiveCount = displays.filter(d => d.status === "inactive").length;
+    // Function to determine status based on lastSeen
+    const getActualStatus = display => {
+      if (!display.lastSeen) {
+        return display.status;
+      }
 
-    const displaysSummary = displays.map(d => ({
+      const now = new Date();
+      const lastSeen = new Date(display.lastSeen);
+      const hoursSinceLastSeen = (now - lastSeen) / (1000 * 60 * 60);
+
+      console.log(
+        `Display: ${
+          display.displayName
+        }, Last Seen: ${lastSeen}, Hours Since: ${hoursSinceLastSeen.toFixed(
+          2
+        )}, Original Status: ${display.status}`
+      );
+
+      // If last seen is > 2 hours ago, status should be offline
+      if (hoursSinceLastSeen > 2) {
+        console.log(
+          `  -> Setting to OFFLINE (${hoursSinceLastSeen.toFixed(
+            2
+          )} hours > 2 hours)`
+        );
+        return "offline";
+      }
+
+      console.log(`  -> Keeping original status: ${display.status}`);
+      return display.status;
+    };
+
+    // Update status counts based on actual status (including 2-hour rule)
+    const displaysWithActualStatus = displays.map(d => ({
+      ...d.toObject(),
+      actualStatus: getActualStatus(d),
+    }));
+
+    const onlineCount = displaysWithActualStatus.filter(
+      d => d.actualStatus === "online"
+    ).length;
+    const offlineCount = displaysWithActualStatus.filter(
+      d => d.actualStatus === "offline"
+    ).length;
+    const inactiveCount = displaysWithActualStatus.filter(
+      d => d.actualStatus === "inactive"
+    ).length;
+
+    const displaysSummary = displaysWithActualStatus.map(d => ({
       _id: d._id,
       displayName: d.displayName,
       location: d.location,
-      status: d.status,
+      status: d.actualStatus, // Use actual status with 2-hour rule
       isConnected: d.isConnected,
       lastSeen: d.lastSeen,
       resolution: `${d.resolution.width}x${d.resolution.height}`,

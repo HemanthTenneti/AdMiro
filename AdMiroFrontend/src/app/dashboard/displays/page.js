@@ -252,7 +252,8 @@ export default function DisplaysPage() {
             {activeSearchTerm && (
               <p className="mt-2 text-sm text-gray-600">
                 Found <strong>{totalItems}</strong> display
-                {totalItems !== 1 ? "s" : ""} for "{activeSearchTerm}"
+                {totalItems !== 1 ? "s" : ""} for &ldquo;{activeSearchTerm}
+                &rdquo;
               </p>
             )}
           </div>

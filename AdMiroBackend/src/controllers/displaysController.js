@@ -223,6 +223,31 @@ const getDisplays = async (req, res) => {
 
     const total = await Display.countDocuments(filter);
 
+    // Function to determine status based on lastSeen (same as analytics)
+    const getActualStatus = display => {
+      if (!display.lastSeen) {
+        return display.status;
+      }
+
+      const now = new Date();
+      const lastSeen = new Date(display.lastSeen);
+      const hoursSinceLastSeen = (now - lastSeen) / (1000 * 60 * 60);
+
+      // If last seen is > 2 hours ago, status should be offline
+      if (hoursSinceLastSeen > 2) {
+        return "offline";
+      }
+
+      return display.status;
+    };
+
+    // Apply actual status based on lastSeen time
+    const displaysWithActualStatus = displays.map(d => {
+      const displayObj = d.toObject();
+      displayObj.status = getActualStatus(d);
+      return displayObj;
+    });
+
     console.log(
       `✅ Fetched ${displays.length} displays for user ${req.user.userId}`
     );
@@ -231,7 +256,7 @@ const getDisplays = async (req, res) => {
     return res.status(200).json(
       formatSuccessResponse(
         {
-          displays,
+          displays: displaysWithActualStatus,
           pagination: {
             currentPage: parseInt(page),
             totalPages: Math.ceil(total / parseInt(limit)),
