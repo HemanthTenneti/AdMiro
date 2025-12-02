@@ -197,7 +197,7 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <section 
+      <section
         data-hero-section
         className="max-w-7xl mx-auto px-4 md:px-8 py-20 md:py-40 relative overflow-hidden bg-linear-to-br from-[#faf9f7] via-[#f5f0e8] to-[#faf9f7]">
         {/* Decorative elements */}
@@ -223,23 +223,29 @@ export default function Home() {
               Reimagined
             </span>
           </h1>
-          
+
           <p
             className="text-lg md:text-xl lg:text-2xl text-gray-700 mb-12 leading-relaxed max-w-3xl mx-auto font-medium"
             ref={heroDescRef}>
-            Control thousands of displays from a single dashboard. 
-            Push updates instantly. Track every metric. 
+            Control thousands of displays from a single dashboard. Push updates
+            instantly. Track every metric.
             <span className="block mt-2 text-[#8b6f47] font-bold">
               It's digital signage that just works.
             </span>
           </p>
 
-          <div className="flex gap-4 flex-wrap justify-center items-center" ref={heroCTARef}>
+          <div
+            className="flex gap-4 flex-wrap justify-center items-center"
+            ref={heroCTARef}>
             <Link
               href="/login"
               className="group px-8 md:px-10 py-4 md:py-5 bg-linear-to-r from-[#8b6f47] to-[#6b5535] text-white font-bold rounded-xl hover:shadow-2xl hover:scale-105 transition-all inline-flex items-center gap-3 text-base md:text-lg">
               Start Free Today
-              <ArrowRight size={24} weight="bold" className="group-hover:translate-x-1 transition-transform" />
+              <ArrowRight
+                size={24}
+                weight="bold"
+                className="group-hover:translate-x-1 transition-transform"
+              />
             </Link>
             <Link
               href="#howit"
@@ -256,10 +262,10 @@ export default function Home() {
               { value: "<100ms", label: "Response Time" },
               { value: "∞", label: "Displays" },
             ].map((stat, i) => (
-              <div 
+              <div
                 key={i}
                 className={`transition-all duration-500 ${
-                  currentStat === i ? 'scale-110' : 'scale-100 opacity-70'
+                  currentStat === i ? "scale-110" : "scale-100 opacity-70"
                 }`}>
                 <div className="text-2xl md:text-4xl font-extrabold text-[#8b6f47]">
                   {stat.value}
@@ -289,14 +295,16 @@ export default function Home() {
               </div>
             </div>
             <div className="grid grid-cols-3 md:grid-cols-5 gap-6 md:gap-12 items-center">
-              {["OpenAI", "Figma", "Stripe", "Vercel", "Notion"].map((company, i) => (
-                <div
-                  key={company}
-                  data-animate-logo
-                  className="text-center text-gray-600 font-extrabold text-base md:text-lg hover:text-[#8b6f47] transition-all cursor-default hover:scale-110">
-                  {company}
-                </div>
-              ))}
+              {["OpenAI", "Figma", "Stripe", "Vercel", "Notion"].map(
+                (company, i) => (
+                  <div
+                    key={company}
+                    data-animate-logo
+                    className="text-center text-gray-600 font-extrabold text-base md:text-lg hover:text-[#8b6f47] transition-all cursor-default hover:scale-110">
+                    {company}
+                  </div>
+                )
+              )}
             </div>
           </div>
         </div>
@@ -320,8 +328,8 @@ export default function Home() {
             </span>
           </h2>
           <p className="text-lg md:text-xl text-gray-700 max-w-2xl mx-auto">
-            Everything you need to run a world-class display network. 
-            No compromises.
+            Everything you need to run a world-class display network. No
+            compromises.
           </p>
         </div>
 
@@ -378,9 +386,10 @@ export default function Home() {
                 className="group relative p-8 border-2 border-[#e5e5e5] rounded-2xl hover:border-[#8b6f47] hover:shadow-2xl transition-all bg-white overflow-hidden">
                 {/* Gradient accent on hover */}
                 <div className="absolute inset-0 bg-linear-to-br from-[#8b6f47]/0 to-[#8b6f47]/0 group-hover:from-[#8b6f47]/5 group-hover:to-transparent transition-all"></div>
-                
+
                 <div className="relative z-10">
-                  <div className={`w-14 h-14 bg-linear-to-br ${feature.color} rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg`}>
+                  <div
+                    className={`w-14 h-14 bg-linear-to-br ${feature.color} rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg`}>
                     <Icon size={28} weight="bold" className="text-white" />
                   </div>
                   <h3 className="text-xl md:text-2xl font-extrabold text-black mb-4">
@@ -402,14 +411,16 @@ export default function Home() {
             Deploy in Minutes, Not Days
           </h3>
           <p className="text-lg text-amber-50 max-w-2xl mx-auto">
-            No complex setup. No hardware to configure. Just connect your displays 
-            and start broadcasting. It's that simple.
+            No complex setup. No hardware to configure. Just connect your
+            displays and start broadcasting. It's that simple.
           </p>
         </div>
       </section>
 
       {/* How It Works */}
-      <section id="howit" className="bg-[#f5f0e8] border-y border-[#e5e5e5] relative overflow-hidden">
+      <section
+        id="howit"
+        className="bg-[#f5f0e8] border-y border-[#e5e5e5] relative overflow-hidden">
         {/* Decorative background */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
           <div className="absolute top-0 right-0 w-96 h-96 bg-[#8b6f47]/10 rounded-full blur-3xl"></div>
@@ -431,7 +442,8 @@ export default function Home() {
               </span>
             </h2>
             <p className="text-lg md:text-xl text-gray-700 max-w-2xl mx-auto">
-              From zero to deployed in under 10 minutes. No technical expertise required.
+              From zero to deployed in under 10 minutes. No technical expertise
+              required.
             </p>
           </div>
 
@@ -468,9 +480,9 @@ export default function Home() {
             ].map((item, i) => {
               const Icon = item.icon;
               return (
-                <div 
-                  key={i} 
-                  data-animate-step 
+                <div
+                  key={i}
+                  data-animate-step
                   className="flex gap-6 bg-white p-8 rounded-2xl border-2 border-transparent hover:border-[#8b6f47] shadow-lg hover:shadow-2xl transition-all group">
                   <div className="shrink-0">
                     <div className="flex items-center justify-center h-16 w-16 rounded-xl bg-linear-to-br from-[#8b6f47] to-[#6b5535] text-white font-extrabold text-xl shadow-lg group-hover:scale-110 transition-transform">
@@ -479,7 +491,11 @@ export default function Home() {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-4">
-                      <Icon size={28} weight="bold" className="text-[#8b6f47]" />
+                      <Icon
+                        size={28}
+                        weight="bold"
+                        className="text-[#8b6f47]"
+                      />
                       <h3 className="text-xl md:text-2xl font-extrabold text-black">
                         {item.title}
                       </h3>
@@ -516,17 +532,22 @@ export default function Home() {
               Ready to transform your{" "}
               <span className="block mt-2">display network?</span>
             </h2>
-            
+
             <p className="text-lg md:text-xl lg:text-2xl text-amber-50 mb-10 md:mb-14 max-w-3xl mx-auto leading-relaxed">
-              Start free. No credit card required. Upgrade only when you're ready to scale.
+              Start free. No credit card required. Upgrade only when you're
+              ready to scale.
             </p>
-            
+
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link
                 href="/login"
                 className="group px-10 py-5 bg-white text-[#8b6f47] rounded-xl font-extrabold hover:bg-amber-50 hover:scale-105 transition-all text-lg shadow-2xl inline-flex items-center gap-3">
                 Get Started Now
-                <ArrowRight size={24} weight="bold" className="group-hover:translate-x-1 transition-transform" />
+                <ArrowRight
+                  size={24}
+                  weight="bold"
+                  className="group-hover:translate-x-1 transition-transform"
+                />
               </Link>
               <Link
                 href="#features"
@@ -547,14 +568,17 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-16 md:py-20">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 mb-12 md:mb-16">
             <div className="col-span-2 md:col-span-1">
-              <Link href="/" className="font-bold text-black mb-4 inline-flex items-center gap-2 hover:scale-105 transition-transform">
+              <Link
+                href="/"
+                className="font-bold text-black mb-4 inline-flex items-center gap-2 hover:scale-105 transition-transform">
                 <div className="w-6 h-6 bg-linear-to-br from-[#8b6f47] to-[#6b5535] rounded-lg flex items-center justify-center text-white text-xs font-bold shadow-md">
                   A
                 </div>
                 <span className="text-xl">AdMiro</span>
               </Link>
               <p className="text-sm text-gray-700 mt-4 leading-relaxed max-w-xs">
-                The most powerful digital display management platform. Built for scale, designed for simplicity.
+                The most powerful digital display management platform. Built for
+                scale, designed for simplicity.
               </p>
               <div className="flex gap-4 mt-6">
                 <Link
@@ -593,17 +617,23 @@ export default function Home() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="/" className="text-gray-700 hover:text-[#8b6f47] transition font-medium">
+                  <Link
+                    href="/"
+                    className="text-gray-700 hover:text-[#8b6f47] transition font-medium">
                     Security
                   </Link>
                 </li>
                 <li>
-                  <Link href="/" className="text-gray-700 hover:text-[#8b6f47] transition font-medium">
+                  <Link
+                    href="/"
+                    className="text-gray-700 hover:text-[#8b6f47] transition font-medium">
                     Pricing
                   </Link>
                 </li>
                 <li>
-                  <Link href="/" className="text-gray-700 hover:text-[#8b6f47] transition font-medium">
+                  <Link
+                    href="/"
+                    className="text-gray-700 hover:text-[#8b6f47] transition font-medium">
                     Roadmap
                   </Link>
                 </li>
@@ -615,22 +645,30 @@ export default function Home() {
               </h4>
               <ul className="space-y-3 text-sm">
                 <li>
-                  <Link href="/" className="text-gray-700 hover:text-[#8b6f47] transition font-medium">
+                  <Link
+                    href="/"
+                    className="text-gray-700 hover:text-[#8b6f47] transition font-medium">
                     About
                   </Link>
                 </li>
                 <li>
-                  <Link href="/" className="text-gray-700 hover:text-[#8b6f47] transition font-medium">
+                  <Link
+                    href="/"
+                    className="text-gray-700 hover:text-[#8b6f47] transition font-medium">
                     Blog
                   </Link>
                 </li>
                 <li>
-                  <Link href="/" className="text-gray-700 hover:text-[#8b6f47] transition font-medium">
+                  <Link
+                    href="/"
+                    className="text-gray-700 hover:text-[#8b6f47] transition font-medium">
                     Careers
                   </Link>
                 </li>
                 <li>
-                  <Link href="/" className="text-gray-700 hover:text-[#8b6f47] transition font-medium">
+                  <Link
+                    href="/"
+                    className="text-gray-700 hover:text-[#8b6f47] transition font-medium">
                     Contact
                   </Link>
                 </li>
@@ -642,22 +680,30 @@ export default function Home() {
               </h4>
               <ul className="space-y-3 text-sm">
                 <li>
-                  <Link href="/" className="text-gray-700 hover:text-[#8b6f47] transition font-medium">
+                  <Link
+                    href="/"
+                    className="text-gray-700 hover:text-[#8b6f47] transition font-medium">
                     Privacy Policy
                   </Link>
                 </li>
                 <li>
-                  <Link href="/" className="text-gray-700 hover:text-[#8b6f47] transition font-medium">
+                  <Link
+                    href="/"
+                    className="text-gray-700 hover:text-[#8b6f47] transition font-medium">
                     Terms of Service
                   </Link>
                 </li>
                 <li>
-                  <Link href="/" className="text-gray-700 hover:text-[#8b6f47] transition font-medium">
+                  <Link
+                    href="/"
+                    className="text-gray-700 hover:text-[#8b6f47] transition font-medium">
                     Cookie Policy
                   </Link>
                 </li>
                 <li>
-                  <Link href="/" className="text-gray-700 hover:text-[#8b6f47] transition font-medium">
+                  <Link
+                    href="/"
+                    className="text-gray-700 hover:text-[#8b6f47] transition font-medium">
                     Status
                   </Link>
                 </li>
