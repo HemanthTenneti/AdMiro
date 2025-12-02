@@ -7,6 +7,9 @@ export const metadata = {
   title: "AdMiro - Digital Advertisement Management",
   description:
     "Manage digital advertisements across multiple displays in real-time",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({ children }) {

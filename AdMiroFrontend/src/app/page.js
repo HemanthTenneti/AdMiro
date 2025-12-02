@@ -250,12 +250,6 @@ export default function Home() {
               icon: ChartBar,
             },
             {
-              title: "Flexible Scheduling",
-              description:
-                "Schedule advertisements for specific times, dates, or recurring patterns. Automate your content rotation.",
-              icon: Clock,
-            },
-            {
               title: "Multi-display Management",
               description:
                 "Manage unlimited displays from a single dashboard. Group displays, apply bulk updates, and monitor health status.",
@@ -264,7 +258,7 @@ export default function Home() {
             {
               title: "Enterprise Security",
               description:
-                "JWT authentication, role-based access control, encrypted connections, and compliance with modern security standards.",
+                "JWT authentication, encrypted connections, and compliance with modern security standards to keep your content safe.",
               icon: Lock,
             },
             {
@@ -313,25 +307,25 @@ export default function Home() {
                 step: "01",
                 title: "Connect your displays",
                 description:
-                  "Register your Android displays in the dashboard. Each gets a unique ID for easy identification and management.",
+                  "Register your displays in the dashboard with a secure connection token. Each display gets a unique ID for easy identification.",
               },
               {
                 step: "02",
-                title: "Create & manage ads",
+                title: "Upload your content",
                 description:
-                  "Upload images, videos, or create rich content. Set schedules and rotation rules for your advertisements.",
+                  "Upload images and videos to create your advertisements. Organize them into loops for seamless rotation on your displays.",
               },
               {
                 step: "03",
-                title: "Push & control",
+                title: "Assign & deploy",
                 description:
-                  "Deploy content across displays instantly. Update, pause, or rotate ads without any physical interaction.",
+                  "Assign loops to your displays and watch content go live instantly. Update or change loops remotely without physical access.",
               },
               {
                 step: "04",
-                title: "Monitor & optimize",
+                title: "Monitor performance",
                 description:
-                  "Track real-time analytics. See impressions, engagement metrics, and optimize based on performance data.",
+                  "Track display status, view analytics, and monitor your entire network from a single dashboard in real-time.",
               },
             ].map((item, i) => (
               <div key={i} data-animate-step className="flex gap-4 md:gap-8">
@@ -398,12 +392,12 @@ export default function Home() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="#" className="hover:text-black transition">
+                  <Link href="/" className="hover:text-black transition">
                     Security
                   </Link>
                 </li>
                 <li>
-                  <Link href="#" className="hover:text-black transition">
+                  <Link href="/" className="hover:text-black transition">
                     Roadmap
                   </Link>
                 </li>
@@ -413,12 +407,12 @@ export default function Home() {
               <h4 className="font-bold text-black mb-4 text-sm">Company</h4>
               <ul className="space-y-3 text-sm text-gray-700">
                 <li>
-                  <Link href="#" className="hover:text-black transition">
+                  <Link href="/" className="hover:text-black transition">
                     About
                   </Link>
                 </li>
                 <li>
-                  <Link href="#" className="hover:text-black transition">
+                  <Link href="/" className="hover:text-black transition">
                     Contact
                   </Link>
                 </li>
@@ -428,17 +422,17 @@ export default function Home() {
               <h4 className="font-bold text-black mb-4 text-sm">Legal</h4>
               <ul className="space-y-3 text-sm text-gray-700">
                 <li>
-                  <Link href="#" className="hover:text-black transition">
+                  <Link href="/" className="hover:text-black transition">
                     Privacy
                   </Link>
                 </li>
                 <li>
-                  <Link href="#" className="hover:text-black transition">
+                  <Link href="/" className="hover:text-black transition">
                     Terms
                   </Link>
                 </li>
                 <li>
-                  <Link href="#" className="hover:text-black transition">
+                  <Link href="/" className="hover:text-black transition">
                     Status
                   </Link>
                 </li>
@@ -449,17 +443,19 @@ export default function Home() {
           <div className="border-t border-[#e5e5e5] pt-6 md:pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs md:text-sm text-gray-700">
             <p>&copy; 2025 AdMiro. All rights reserved.</p>
             <div className="flex gap-6">
-              <Link href="#" className="hover:text-black transition">
-                Twitter
-              </Link>
-              <Link href="#" className="hover:text-black transition">
+              <Link
+                href="https://github.com/HemanthTenneti"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-black transition">
                 GitHub
               </Link>
-              <Link href="#" className="hover:text-black transition">
+              <Link
+                href="https://www.linkedin.com/in/hemanth10eti"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-black transition">
                 LinkedIn
-              </Link>
-              <Link href="#" className="hover:text-black transition">
-                Discord
               </Link>
             </div>
           </div>
