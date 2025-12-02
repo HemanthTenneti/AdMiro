@@ -6,6 +6,7 @@ import advertisementsRoutes from "./advertisementsRoutes.js";
 import loopsRoutes from "./loopsRoutes.js";
 import logsRoutes from "./logsRoutes.js";
 import profileRoutes from "./profileRoutes.js";
+import analyticsRoutes from "./analyticsRoutes.js";
 
 const router = express.Router();
 
@@ -41,8 +42,8 @@ router.use("/loops", loopsRoutes);
 // Logs routes
 router.use("/logs", logsRoutes);
 
-// Analytics routes (will be added in Phase 8)
-// router.use('/analytics', require('./analytics'));
+// Analytics routes
+router.use("/analytics", analyticsRoutes);
 
 // Users routes (will be added in Phase 10)
 // router.use('/users', require('./users'));

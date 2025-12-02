@@ -15,6 +15,8 @@ import {
   X,
   Copy,
   Check,
+  CaretLeft,
+  CaretRight,
 } from "phosphor-react";
 import gsap from "gsap";
 
@@ -28,9 +30,11 @@ export default function DisplaysPage() {
   const [deleteLoading, setDeleteLoading] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const [copiedId, setCopiedId] = useState(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
-  const itemsPerPage = 10;
+  const itemsPerPage = 8;
 
   // Check auth and fetch displays
   useEffect(() => {
@@ -40,8 +44,8 @@ export default function DisplaysPage() {
       return;
     }
 
-    fetchDisplays();
-  }, [router]);
+    fetchDisplays(page);
+  }, [router, page]);
 
   // Entry animation
   useEffect(() => {
@@ -54,18 +58,29 @@ export default function DisplaysPage() {
     }
   }, [loading]);
 
-  const fetchDisplays = async () => {
+  const fetchDisplays = async (pageNum = 1) => {
     try {
       setLoading(true);
       setError("");
-      console.log("📤 Fetching displays...");
+      console.log(`📤 Fetching displays - Page ${pageNum}...`);
 
-      const response = await axiosInstance.get("/api/displays");
+      const response = await axiosInstance.get("/api/displays", {
+        params: {
+          page: pageNum,
+          limit: itemsPerPage,
+        },
+      });
       console.log("✅ Displays fetched:", response.data);
 
-      setAllDisplays(response.data.data.displays || []);
       setDisplays(response.data.data.displays || []);
-      setPage(1);
+      setAllDisplays(response.data.data.displays || []);
+
+      // Set pagination info from backend response
+      const pagination = response.data.data.pagination;
+      if (pagination) {
+        setTotalPages(pagination.totalPages);
+        setTotalItems(pagination.total);
+      }
     } catch (err) {
       console.error("❌ Error fetching displays:", err);
       const errorMessage =
@@ -124,62 +139,50 @@ export default function DisplaysPage() {
     }
   };
 
-  // Smart search function
+  // Smart search function - client side on current page
   const performSearch = searchValue => {
     setSearchTerm(searchValue);
-    setPage(1);
-
-    if (!searchValue.trim()) {
-      setDisplays(allDisplays);
-      return;
-    }
-
-    const lowercaseSearch = searchValue.toLowerCase();
-    const filtered = allDisplays.filter(display => {
-      // Search by Display ID
-      if (display.displayId?.toLowerCase().includes(lowercaseSearch))
-        return true;
-      // Search by Display Name
-      if (display.displayName?.toLowerCase().includes(lowercaseSearch))
-        return true;
-      // Search by Location
-      if (display.location?.toLowerCase().includes(lowercaseSearch))
-        return true;
-      // Search by Created By (First Name, Last Name, Username)
-      const createdBy = display.assignedAdmin?.firstName || "";
-      const lastName = display.assignedAdmin?.lastName || "";
-      const username = display.assignedAdmin?.username || "";
-      if (
-        createdBy.toLowerCase().includes(lowercaseSearch) ||
-        lastName.toLowerCase().includes(lowercaseSearch) ||
-        username.toLowerCase().includes(lowercaseSearch)
-      ) {
-        return true;
-      }
-      // Search by Resolution
-      if (
-        `${display.resolution.width}x${display.resolution.height}`
-          .toLowerCase()
-          .includes(lowercaseSearch)
-      ) {
-        return true;
-      }
-      // Search by Status
-      if (display.status?.toLowerCase().includes(lowercaseSearch)) return true;
-
-      return false;
-    });
-
-    setDisplays(filtered);
+    // Search is now done client-side on the displays loaded from server
   };
 
-  // Pagination logic
-  const totalPages = Math.ceil(displays.length / itemsPerPage);
-  const startIndex = (page - 1) * itemsPerPage;
-  const paginatedDisplays = displays.slice(
-    startIndex,
-    startIndex + itemsPerPage
-  );
+  // Filter displays based on search term (client-side)
+  const filteredDisplays = searchTerm.trim()
+    ? displays.filter(display => {
+        const lowercaseSearch = searchTerm.toLowerCase();
+        // Search by Display ID
+        if (display.displayId?.toLowerCase().includes(lowercaseSearch))
+          return true;
+        // Search by Display Name
+        if (display.displayName?.toLowerCase().includes(lowercaseSearch))
+          return true;
+        // Search by Location
+        if (display.location?.toLowerCase().includes(lowercaseSearch))
+          return true;
+        // Search by Created By
+        const createdBy = display.assignedAdmin?.firstName || "";
+        const lastName = display.assignedAdmin?.lastName || "";
+        const username = display.assignedAdmin?.username || "";
+        if (
+          createdBy.toLowerCase().includes(lowercaseSearch) ||
+          lastName.toLowerCase().includes(lowercaseSearch) ||
+          username.toLowerCase().includes(lowercaseSearch)
+        ) {
+          return true;
+        }
+        // Search by Resolution
+        if (
+          `${display.resolution.width}x${display.resolution.height}`
+            .toLowerCase()
+            .includes(lowercaseSearch)
+        ) {
+          return true;
+        }
+        // Search by Status
+        if (display.status?.toLowerCase().includes(lowercaseSearch))
+          return true;
+        return false;
+      })
+    : displays;
 
   return (
     <DashboardLayout>
@@ -251,7 +254,7 @@ export default function DisplaysPage() {
                 <p className="text-gray-600">Loading your displays...</p>
               </div>
             </div>
-          ) : paginatedDisplays.length === 0 ? (
+          ) : filteredDisplays.length === 0 ? (
             // Empty State
             <div className="bg-white rounded-2xl border-2 border-[#e5e5e5] p-12 text-center">
               <h2 className="text-2xl font-bold text-black mb-2">
@@ -301,7 +304,7 @@ export default function DisplaysPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {paginatedDisplays.map((display, index) => (
+                    {filteredDisplays.map((display, index) => (
                       <tr
                         key={display._id}
                         className="border-b border-[#e5e5e5] hover:bg-[#faf9f7] transition">
@@ -411,38 +414,93 @@ export default function DisplaysPage() {
 
           {/* Displays Count */}
           {displays.length > 0 && (
-            <div className="mt-8">
+            <div className="mt-12">
               {/* Pagination Controls */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-4 mb-6">
-                  <button
-                    onClick={() => setPage(Math.max(1, page - 1))}
-                    disabled={page === 1}
-                    className="px-4 py-2 bg-[#8b6f47] hover:bg-[#7a5f3a] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition">
-                    Previous
-                  </button>
-                  <div className="flex items-center gap-2">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                      pageNum => (
+                <div className="flex flex-col items-center gap-6">
+                  <div className="flex items-center justify-center gap-1 flex-wrap">
+                    {/* Previous Button */}
+                    <button
+                      onClick={() => setPage(Math.max(1, page - 1))}
+                      disabled={page === 1}
+                      className="p-2 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed text-[#8b6f47] hover:bg-[#f0ede9]">
+                      <CaretLeft size={20} weight="bold" />
+                    </button>
+
+                    <div className="flex items-center gap-1">
+                      {/* First Page */}
+                      {page > 3 && (
+                        <>
+                          <button
+                            onClick={() => setPage(1)}
+                            className="px-3 py-2 rounded-md font-semibold transition text-sm bg-[#f0ede9] text-black hover:bg-[#e5d9c8]">
+                            1
+                          </button>
+                          {page > 4 && (
+                            <span className="px-2 text-gray-400 text-lg">
+                              ···
+                            </span>
+                          )}
+                        </>
+                      )}
+
+                      {/* Page Range Around Current */}
+                      {Array.from(
+                        { length: Math.min(5, totalPages) },
+                        (_, i) => {
+                          const startPage = Math.max(
+                            1,
+                            Math.min(page - 2, totalPages - 4)
+                          );
+                          return startPage + i;
+                        }
+                      ).map(pageNum => (
                         <button
                           key={pageNum}
                           onClick={() => setPage(pageNum)}
-                          className={`px-3 py-2 rounded-lg font-semibold transition ${
+                          className={`px-3 py-2 rounded-md font-semibold transition text-sm ${
                             page === pageNum
-                              ? "bg-[#8b6f47] text-white"
-                              : "bg-[#f0ede9] text-black hover:bg-[#e5e0d9]"
+                              ? "bg-[#8b6f47] text-white shadow-md"
+                              : "bg-[#f0ede9] text-black hover:bg-[#e5d9c8]"
                           }`}>
                           {pageNum}
                         </button>
-                      )
-                    )}
+                      ))}
+
+                      {/* Last Page */}
+                      {page < totalPages - 2 && (
+                        <>
+                          {page < totalPages - 3 && (
+                            <span className="px-2 text-gray-400 text-lg">
+                              ···
+                            </span>
+                          )}
+                          <button
+                            onClick={() => setPage(totalPages)}
+                            className="px-3 py-2 rounded-md font-semibold transition text-sm bg-[#f0ede9] text-black hover:bg-[#e5d9c8]">
+                            {totalPages}
+                          </button>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Next Button */}
+                    <button
+                      onClick={() => setPage(Math.min(totalPages, page + 1))}
+                      disabled={page === totalPages}
+                      className="p-2 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed text-[#8b6f47] hover:bg-[#f0ede9]">
+                      <CaretRight size={20} weight="bold" />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => setPage(Math.min(totalPages, page + 1))}
-                    disabled={page === totalPages}
-                    className="px-4 py-2 bg-[#8b6f47] hover:bg-[#7a5f3a] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition">
-                    Next
-                  </button>
+
+                  {/* Page Info */}
+                  <div className="text-xs tracking-wide text-gray-500 uppercase">
+                    Page{" "}
+                    <span className="text-[#8b6f47] font-bold">{page}</span> of{" "}
+                    <span className="text-[#8b6f47] font-bold">
+                      {totalPages}
+                    </span>
+                  </div>
                 </div>
               )}
 
@@ -451,11 +509,11 @@ export default function DisplaysPage() {
                 <p>
                   Showing{" "}
                   <strong>
-                    {startIndex + 1}-
-                    {Math.min(startIndex + itemsPerPage, displays.length)}
+                    {(page - 1) * itemsPerPage + 1}-
+                    {(page - 1) * itemsPerPage + filteredDisplays.length}
                   </strong>{" "}
-                  of <strong>{displays.length}</strong> display
-                  {displays.length !== 1 ? "s" : ""}
+                  of <strong>{totalItems}</strong> display
+                  {totalItems !== 1 ? "s" : ""}
                   {searchTerm && ` (searched)`}
                 </p>
               </div>

@@ -13,6 +13,8 @@ import {
   CircleNotch,
   MagnifyingGlass,
   X,
+  CaretLeft,
+  CaretRight,
 } from "phosphor-react";
 import gsap from "gsap";
 
@@ -32,8 +34,9 @@ export default function AdvertisementsPage() {
   const [sortBy, setSortBy] = useState("createdAt");
   const [order, setOrder] = useState("desc");
   const [page, setPage] = useState(1);
-  const [pagination, setPagination] = useState({});
-  const itemsPerPage = 9;
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 8;
 
   // Check auth and fetch advertisements
   useEffect(() => {
@@ -43,13 +46,12 @@ export default function AdvertisementsPage() {
       return;
     }
 
-    fetchAdvertisements();
-  }, [router]);
+    fetchAdvertisements(page);
+  }, [router, page]);
 
   // Refetch when filters change
   useEffect(() => {
     setPage(1);
-    fetchAdvertisements();
   }, [statusFilter, sortBy, order]);
 
   // Entry animation
@@ -69,24 +71,24 @@ export default function AdvertisementsPage() {
       setError("");
       console.log("📤 Fetching advertisements...");
 
-      const params = new URLSearchParams({
+      const params = {
         page: pageNum,
-        limit: 1000, // Fetch all ads for client-side filtering
+        limit: itemsPerPage,
         sortBy,
         order,
-      });
+      };
 
       if (statusFilter) {
-        params.append("status", statusFilter);
+        params.status = statusFilter;
       }
 
-      const response = await axiosInstance.get(`/api/ads?${params}`);
+      const response = await axiosInstance.get("/api/ads", { params });
       console.log("✅ Advertisements fetched:", response.data);
 
       const ads = response.data.data.advertisements || [];
-      setAllAdvertisements(ads);
       setAdvertisements(ads);
-      setPage(1);
+      setTotalPages(response.data.data.pagination?.totalPages || 1);
+      setTotalItems(response.data.data.pagination?.total || 0);
     } catch (err) {
       console.error("❌ Error fetching advertisements:", err);
       const errorMessage =
@@ -96,7 +98,6 @@ export default function AdvertisementsPage() {
       setError(errorMessage);
       toast.error(errorMessage);
       setAdvertisements([]);
-      setAllAdvertisements([]);
     } finally {
       setLoading(false);
     }
@@ -149,39 +150,43 @@ export default function AdvertisementsPage() {
   // Smart search function
   const performSearch = searchValue => {
     setSearchTerm(searchValue);
+    // Fetch first page of results with new search term
     setPage(1);
-
-    if (!searchValue.trim()) {
-      setAdvertisements(allAdvertisements);
-      return;
-    }
-
-    const lowercaseSearch = searchValue.toLowerCase();
-    const filtered = allAdvertisements.filter(ad => {
-      // Search by Ad Name
-      if (ad.adName?.toLowerCase().includes(lowercaseSearch)) return true;
-      // Search by Duration
-      if (ad.duration?.toString().includes(lowercaseSearch)) return true;
-      // Search by Status
-      if (ad.status?.toLowerCase().includes(lowercaseSearch)) return true;
-      // Search by Media Type
-      if (ad.mediaType?.toLowerCase().includes(lowercaseSearch)) return true;
-      // Search by Description (if available)
-      if (ad.description?.toLowerCase().includes(lowercaseSearch)) return true;
-      // Search by Views count
-      if (ad.views?.toString().includes(lowercaseSearch)) return true;
-      // Search by Clicks count
-      if (ad.clicks?.toString().includes(lowercaseSearch)) return true;
-
-      return false;
-    });
-
-    setAdvertisements(filtered);
   };
 
-  // Pagination logic
+  // Apply search filtering to current page results
+  const filteredAdvertisements = searchTerm.trim()
+    ? advertisements.filter(ad => {
+        const lowercaseSearch = searchTerm.toLowerCase();
+        // Search by Ad Name
+        if (ad.adName?.toLowerCase().includes(lowercaseSearch)) return true;
+        // Search by Duration
+        if (ad.duration?.toString().includes(lowercaseSearch)) return true;
+        // Search by Status
+        if (ad.status?.toLowerCase().includes(lowercaseSearch)) return true;
+        // Search by Media Type
+        if (ad.mediaType?.toLowerCase().includes(lowercaseSearch)) return true;
+        // Search by Description (if available)
+        if (ad.description?.toLowerCase().includes(lowercaseSearch))
+          return true;
+        // Search by Views count
+        if (ad.views?.toString().includes(lowercaseSearch)) return true;
+        // Search by Clicks count
+        if (ad.clicks?.toString().includes(lowercaseSearch)) return true;
+
+        return false;
+      })
+    : advertisements;
+
+  // Ensure page is within valid range
   const totalPages = Math.ceil(advertisements.length / itemsPerPage);
-  const startIndex = (page - 1) * itemsPerPage;
+  const validPage = Math.min(Math.max(1, page), Math.max(1, totalPages));
+  if (validPage !== page) {
+    setPage(validPage);
+  }
+
+  // Pagination logic
+  const startIndex = (validPage - 1) * itemsPerPage;
   const paginatedAds = advertisements.slice(
     startIndex,
     startIndex + itemsPerPage
@@ -314,7 +319,7 @@ export default function AdvertisementsPage() {
                 <p className="text-gray-600">Loading advertisements...</p>
               </div>
             </div>
-          ) : advertisements.length === 0 ? (
+          ) : filteredAdvertisements.length === 0 ? (
             // Empty State
             <div className="bg-white rounded-2xl border-2 border-[#e5e5e5] p-12 text-center">
               <h2 className="text-2xl font-bold text-black mb-2">
@@ -338,7 +343,7 @@ export default function AdvertisementsPage() {
           ) : (
             // Advertisements Grid
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              {paginatedAds.map(ad => (
+              {filteredAdvertisements.map(ad => (
                 <div
                   key={ad._id}
                   className="bg-white rounded-2xl border-2 border-[#e5e5e5] overflow-hidden hover:shadow-lg transition">
@@ -446,35 +451,80 @@ export default function AdvertisementsPage() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-4 mb-6 mt-8">
-              <button
-                onClick={() => setPage(Math.max(1, page - 1))}
-                disabled={page === 1}
-                className="px-4 py-2 bg-[#8b6f47] hover:bg-[#7a5f3a] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition">
-                Previous
-              </button>
-              <div className="flex items-center gap-2">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                  pageNum => (
+            <div className="flex flex-col items-center gap-6 mb-6 mt-12">
+              <div className="flex items-center justify-center gap-1 flex-wrap">
+                {/* Previous Button */}
+                <button
+                  onClick={() => setPage(Math.max(1, page - 1))}
+                  disabled={page === 1}
+                  className="p-2 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed text-[#8b6f47] hover:bg-[#f0ede9]">
+                  <CaretLeft size={20} weight="bold" />
+                </button>
+
+                <div className="flex items-center gap-1">
+                  {/* First Page */}
+                  {page > 3 && (
+                    <>
+                      <button
+                        onClick={() => setPage(1)}
+                        className="px-3 py-2 rounded-md font-semibold transition text-sm bg-[#f0ede9] text-black hover:bg-[#e5d9c8]">
+                        1
+                      </button>
+                      {page > 4 && (
+                        <span className="px-2 text-gray-400 text-lg">···</span>
+                      )}
+                    </>
+                  )}
+
+                  {/* Page Range Around Current */}
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const startPage = Math.max(
+                      1,
+                      Math.min(page - 2, totalPages - 4)
+                    );
+                    return startPage + i;
+                  }).map(pageNum => (
                     <button
                       key={pageNum}
                       onClick={() => setPage(pageNum)}
-                      className={`px-3 py-2 rounded-lg font-semibold transition ${
+                      className={`px-3 py-2 rounded-md font-semibold transition text-sm ${
                         page === pageNum
-                          ? "bg-[#8b6f47] text-white"
-                          : "bg-[#f0ede9] text-black hover:bg-[#e5e0d9]"
+                          ? "bg-[#8b6f47] text-white shadow-md"
+                          : "bg-[#f0ede9] text-black hover:bg-[#e5d9c8]"
                       }`}>
                       {pageNum}
                     </button>
-                  )
-                )}
+                  ))}
+
+                  {/* Last Page */}
+                  {page < totalPages - 2 && (
+                    <>
+                      {page < totalPages - 3 && (
+                        <span className="px-2 text-gray-400 text-lg">···</span>
+                      )}
+                      <button
+                        onClick={() => setPage(totalPages)}
+                        className="px-3 py-2 rounded-md font-semibold transition text-sm bg-[#f0ede9] text-black hover:bg-[#e5d9c8]">
+                        {totalPages}
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {/* Next Button */}
+                <button
+                  onClick={() => setPage(Math.min(totalPages, page + 1))}
+                  disabled={page === totalPages}
+                  className="p-2 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed text-[#8b6f47] hover:bg-[#f0ede9]">
+                  <CaretRight size={20} weight="bold" />
+                </button>
               </div>
-              <button
-                onClick={() => setPage(Math.min(totalPages, page + 1))}
-                disabled={page === totalPages}
-                className="px-4 py-2 bg-[#8b6f47] hover:bg-[#7a5f3a] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition">
-                Next
-              </button>
+
+              {/* Page Info */}
+              <div className="text-xs tracking-wide text-gray-500 uppercase">
+                Page <span className="text-[#8b6f47] font-bold">{page}</span> of{" "}
+                <span className="text-[#8b6f47] font-bold">{totalPages}</span>
+              </div>
             </div>
           )}
 
@@ -484,11 +534,11 @@ export default function AdvertisementsPage() {
               <p>
                 Showing{" "}
                 <strong>
-                  {startIndex + 1}-
-                  {Math.min(startIndex + itemsPerPage, advertisements.length)}
+                  {(page - 1) * itemsPerPage + 1}-
+                  {(page - 1) * itemsPerPage + filteredAdvertisements.length}
                 </strong>{" "}
-                of <strong>{advertisements.length}</strong> advertisement
-                {advertisements.length !== 1 ? "s" : ""}
+                of <strong>{totalItems}</strong> advertisement
+                {totalItems !== 1 ? "s" : ""}
                 {searchTerm && ` (searched)`}
               </p>
             </div>

@@ -18,7 +18,6 @@ export default function DisplayPage() {
   const containerRef = useRef(null);
 
   const [displayId, setDisplayId] = useState(null);
-  const [connectionToken, setConnectionToken] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentAdIndex, setCurrentAdIndex] = useState(0);
@@ -29,7 +28,7 @@ export default function DisplayPage() {
   const [loginMode, setLoginMode] = useState(false);
   const [loginData, setLoginData] = useState({
     displayId: "",
-    connectionToken: "",
+    password: "",
   });
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
@@ -43,11 +42,11 @@ export default function DisplayPage() {
   const [showNavigationButtons, setShowNavigationButtons] = useState(false);
 
   // Report status to backend
-  const reportDisplayStatus = useCallback(async (token, status) => {
+  const reportDisplayStatus = useCallback(async (displayId, status) => {
     try {
       console.log("📡 Reporting display status:", status);
       await axiosInstance.post("/api/displays/report-status", {
-        connectionToken: token,
+        displayId,
         status,
         currentAdPlaying: currentAdIdRef.current || "none",
       });
@@ -60,14 +59,14 @@ export default function DisplayPage() {
   // Fetch ads for display
   const fetchAdsForDisplay = useCallback(async () => {
     try {
-      const token = localStorage.getItem("connectionToken");
-      if (!token) {
-        setError("No connection token found");
+      const dispId = localStorage.getItem("displayId");
+      if (!dispId) {
+        setError("No display ID found");
         return;
       }
 
       console.log("📺 Fetching display loop and advertisements...");
-      const response = await axiosInstance.get(`/api/displays/loop/${token}`);
+      const response = await axiosInstance.get(`/api/displays/loop/${dispId}`);
       console.log("✅ Display loop fetched:", response.data);
 
       const loop = response.data.data.loop;
@@ -105,17 +104,15 @@ export default function DisplayPage() {
 
   // Initialize display on mount
   useEffect(() => {
-    const token = localStorage.getItem("connectionToken");
     const displayIdStored = localStorage.getItem("displayId");
 
-    if (!token || !displayIdStored) {
+    if (!displayIdStored) {
       // No display registered, show login form
       setLoginMode(true);
       setLoading(false);
       return;
     }
 
-    setConnectionToken(token);
     setDisplayId(displayIdStored);
     setLoading(false);
 
@@ -165,7 +162,6 @@ export default function DisplayPage() {
           document.exitFullscreen();
         }
         localStorage.removeItem("displayId");
-        localStorage.removeItem("connectionToken");
         router.push("/login");
       }
     };
@@ -277,22 +273,20 @@ export default function DisplayPage() {
     setLoginError("");
 
     try {
-      console.log("🔐 Logging in display with token...");
+      console.log("🔐 Logging in display with password...");
 
-      // Validate with backend
-      const response = await axiosInstance.post("/api/displays/login-display", {
+      // Use password-based login
+      const response = await axiosInstance.post("/api/displays/login", {
         displayId: loginData.displayId,
-        connectionToken: loginData.connectionToken,
+        password: loginData.password,
       });
 
       console.log("✅ Display login successful:", response.data);
 
-      // Store credentials
-      localStorage.setItem("connectionToken", loginData.connectionToken);
+      // Store display info
       localStorage.setItem("displayId", response.data.data.displayId);
 
       // Update state
-      setConnectionToken(loginData.connectionToken);
       setDisplayId(response.data.data.displayId);
       setLoginMode(false);
       setLoading(false);
@@ -301,7 +295,7 @@ export default function DisplayPage() {
       fetchAdsForDisplay();
 
       // Report status
-      reportDisplayStatus(loginData.connectionToken, "online");
+      reportDisplayStatus(response.data.data.displayId, "online");
     } catch (err) {
       console.error("❌ Login error:", err);
       setLoginError(
@@ -315,10 +309,8 @@ export default function DisplayPage() {
 
   // Handle logout
   const handleLogout = () => {
-    localStorage.removeItem("connectionToken");
     localStorage.removeItem("displayId");
     localStorage.removeItem("displayMode");
-    setConnectionToken(null);
     setDisplayId(null);
     setAds([]);
     setCurrentAd(null);
@@ -329,13 +321,12 @@ export default function DisplayPage() {
 
   // Handle switch display
   const handleSwitchDisplay = () => {
-    localStorage.removeItem("connectionToken");
     localStorage.removeItem("displayId");
     localStorage.removeItem("displayMode");
-    setConnectionToken(null);
     setDisplayId(null);
     setAds([]);
     setCurrentAd(null);
+    setLoginData({ displayId: "", password: "" });
     setLoginMode(true);
     setShowMenu(false);
   };
@@ -441,19 +432,19 @@ export default function DisplayPage() {
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Connection Token
+                Password
               </label>
               <input
-                type="text"
-                value={loginData.connectionToken}
+                type="password"
+                value={loginData.password}
                 onChange={e =>
                   setLoginData({
                     ...loginData,
-                    connectionToken: e.target.value,
+                    password: e.target.value,
                   })
                 }
-                placeholder="e.g., ac886ad0-46d6-459d-a2b4-c46afe4aad2b"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b6f47] focus:border-transparent font-mono text-sm"
+                placeholder="Enter your display password"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8b6f47] focus:border-transparent"
                 required
               />
             </div>
@@ -480,9 +471,11 @@ export default function DisplayPage() {
           <div className="mt-6 p-4 bg-blue-50 rounded-lg text-sm text-blue-800">
             <p className="font-semibold mb-2">💡 How to find credentials:</p>
             <ol className="list-decimal list-inside space-y-1">
-              <li>Go to /displays/new to get new credentials</li>
-              <li>Or check your admin dashboard for existing displays</li>
-              <li>Copy the Display ID and Connection Token from there</li>
+              <li>Use the Display ID from your display setup</li>
+              <li>Enter the password you set for this display</li>
+              <li>
+                If you forgot your password, reset it from the admin dashboard
+              </li>
             </ol>
           </div>
         </div>
