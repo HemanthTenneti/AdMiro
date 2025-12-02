@@ -348,16 +348,9 @@ export default function LoopsPage() {
                       </th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-black">
                         <button
-                          onClick={() => handleSort("displayName")}
+                          onClick={() => handleSort("displayLayout")}
                           className="flex items-center gap-2 hover:text-[#8b6f47] transition">
-                          Display {getSortIcon("displayName")}
-                        </button>
-                      </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-black">
-                        <button
-                          onClick={() => handleSort("rotationType")}
-                          className="flex items-center gap-2 hover:text-[#8b6f47] transition">
-                          Rotation Type {getSortIcon("rotationType")}
+                          Ad Type {getSortIcon("displayLayout")}
                         </button>
                       </th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-black">
@@ -379,19 +372,10 @@ export default function LoopsPage() {
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          <Link
-                            href={`/dashboard/displays/${
-                              typeof loop.displayId === "string"
-                                ? loop.displayId
-                                : loop.displayId?._id || ""
-                            }`}
-                            className="text-[#8b6f47] hover:text-[#6d5636] font-medium">
-                            {loop.displayName || "Unknown Display"}
-                          </Link>
-                        </td>
-                        <td className="px-6 py-4">
                           <span className="inline-block px-3 py-1 bg-[#8b6f47] text-white text-xs font-semibold rounded-full">
-                            {getRotationTypeLabel(loop.rotationType)}
+                            {loop.displayLayout === "masonry"
+                              ? "Masonry"
+                              : "Sequential"}
                           </span>
                         </td>
                         <td className="px-6 py-4">

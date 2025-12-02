@@ -259,9 +259,9 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* All Logs */}
+      {/* Recent Logs */}
       <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="text-xl font-bold mb-4 text-gray-900">All Logs</h2>
+        <h2 className="text-xl font-bold mb-4 text-gray-900">Recent Logs</h2>
         <div className="space-y-2">
           {logsLoading ? (
             <div className="text-center py-8">

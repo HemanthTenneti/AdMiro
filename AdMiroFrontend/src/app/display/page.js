@@ -42,11 +42,11 @@ export default function DisplayPage() {
   const [showNavigationButtons, setShowNavigationButtons] = useState(false);
 
   // Report status to backend
-  const reportDisplayStatus = useCallback(async (displayId, status) => {
+  const reportDisplayStatus = useCallback(async (connectionToken, status) => {
     try {
       console.log("📡 Reporting display status:", status);
       await axiosInstance.post("/api/displays/report-status", {
-        displayId,
+        connectionToken,
         status,
         currentAdPlaying: currentAdIdRef.current || "none",
       });
@@ -59,14 +59,16 @@ export default function DisplayPage() {
   // Fetch ads for display
   const fetchAdsForDisplay = useCallback(async () => {
     try {
-      const dispId = localStorage.getItem("displayId");
-      if (!dispId) {
-        setError("No display ID found");
+      const connectionToken = localStorage.getItem("connectionToken");
+      if (!connectionToken) {
+        setError("No connection token found");
         return;
       }
 
       console.log("📺 Fetching display loop and advertisements...");
-      const response = await axiosInstance.get(`/api/displays/loop/${dispId}`);
+      const response = await axiosInstance.get(
+        `/api/displays/loop/${connectionToken}`
+      );
       console.log("✅ Display loop fetched:", response.data);
 
       const loop = response.data.data.loop;
@@ -105,8 +107,9 @@ export default function DisplayPage() {
   // Initialize display on mount
   useEffect(() => {
     const displayIdStored = localStorage.getItem("displayId");
+    const connectionTokenStored = localStorage.getItem("connectionToken");
 
-    if (!displayIdStored) {
+    if (!displayIdStored || !connectionTokenStored) {
       // No display registered, show login form
       setLoginMode(true);
       setLoading(false);
@@ -120,11 +123,11 @@ export default function DisplayPage() {
     fetchAdsForDisplay();
 
     // Report initial status
-    reportDisplayStatus(token, "online");
+    reportDisplayStatus(connectionTokenStored, "online");
 
     // Set up heartbeat (report status every 10 seconds)
     const heartbeatInterval = setInterval(() => {
-      reportDisplayStatus(token, "online");
+      reportDisplayStatus(connectionTokenStored, "online");
     }, 10000);
 
     return () => {
@@ -285,18 +288,16 @@ export default function DisplayPage() {
     };
 
     // Add event listeners to the container
-    if (containerRef.current) {
-      containerRef.current.addEventListener("mousemove", handleMouseMove);
-      containerRef.current.addEventListener("mouseleave", handleMouseLeave);
+    const container = containerRef.current;
+    if (container) {
+      container.addEventListener("mousemove", handleMouseMove);
+      container.addEventListener("mouseleave", handleMouseLeave);
     }
 
     return () => {
-      if (containerRef.current) {
-        containerRef.current.removeEventListener("mousemove", handleMouseMove);
-        containerRef.current.removeEventListener(
-          "mouseleave",
-          handleMouseLeave
-        );
+      if (container) {
+        container.removeEventListener("mousemove", handleMouseMove);
+        container.removeEventListener("mouseleave", handleMouseLeave);
       }
       if (hideButtonsTimerRef.current) {
         clearTimeout(hideButtonsTimerRef.current);
@@ -354,7 +355,7 @@ export default function DisplayPage() {
         clearInterval(timerRef.current);
       }
     };
-  }, [currentAd, ads]);
+  }, [currentAd, ads, loopData?.displayLayout, loopData?.rotationType]);
 
   // Handle display login
   const handleDisplayLogin = async e => {
@@ -375,6 +376,10 @@ export default function DisplayPage() {
 
       // Store display info
       localStorage.setItem("displayId", response.data.data.displayId);
+      localStorage.setItem(
+        "connectionToken",
+        response.data.data.connectionToken
+      );
 
       // Update state
       setDisplayId(response.data.data.displayId);
@@ -385,7 +390,7 @@ export default function DisplayPage() {
       fetchAdsForDisplay();
 
       // Report status
-      reportDisplayStatus(response.data.data.displayId, "online");
+      reportDisplayStatus(response.data.data.connectionToken, "online");
     } catch (err) {
       console.error("❌ Login error:", err);
       setLoginError(
@@ -400,6 +405,7 @@ export default function DisplayPage() {
   // Handle logout
   const handleLogout = () => {
     localStorage.removeItem("displayId");
+    localStorage.removeItem("connectionToken");
     localStorage.removeItem("displayMode");
     setDisplayId(null);
     setAds([]);
@@ -412,6 +418,7 @@ export default function DisplayPage() {
   // Handle switch display
   const handleSwitchDisplay = () => {
     localStorage.removeItem("displayId");
+    localStorage.removeItem("connectionToken");
     localStorage.removeItem("displayMode");
     setDisplayId(null);
     setAds([]);
@@ -593,18 +600,19 @@ export default function DisplayPage() {
       {loopData?.displayLayout === "masonry" ? (
         // Masonry Layout - Using CSS Masonry
         <div
-          className="w-full h-full overflow-auto bg-black p-0"
+          className="w-full h-full overflow-auto bg-black p-4"
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
             gridAutoRows: "auto",
-            gap: "0",
-            padding: "0",
+            gap: "16px",
+            padding: "16px",
+            justifyContent: "space-between",
           }}>
           {ads.map((ad, index) => (
             <div
               key={ad._id}
-              className="relative bg-black overflow-hidden flex items-center justify-center"
+              className="relative bg-black overflow-hidden flex items-center justify-center rounded-lg"
               style={{ aspectRatio: "1" }}>
               {ad.mediaType === "image" ? (
                 <Image

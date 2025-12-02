@@ -1,4 +1,5 @@
 import Advertisement from "../models/Advertisement.js";
+import DisplayLoop from "../models/DisplayLoop.js";
 import { v4 as uuidv4 } from "uuid";
 import {
   formatSuccessResponse,
@@ -506,6 +507,20 @@ const deleteAdvertisement = async (req, res) => {
     }
 
     await Advertisement.findByIdAndDelete(id);
+
+    // Remove this advertisement from any loops that contain it
+    try {
+      const result = await DisplayLoop.updateMany(
+        { "advertisements.adId": id },
+        { $pull: { advertisements: { adId: id } } }
+      );
+      console.log(
+        `✅ Removed advertisement from ${result.modifiedCount} loop(s)`
+      );
+    } catch (loopError) {
+      console.error("⚠️ Error removing ad from loops:", loopError.message);
+      // Continue with deletion even if loop update fails
+    }
 
     // Log the action
     await loggingService.createLog({
