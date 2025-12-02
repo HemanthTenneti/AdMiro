@@ -31,18 +31,6 @@ export default function Home() {
     // Enable smooth scrolling
     document.documentElement.style.scrollBehavior = "smooth";
 
-    // Animated gradient background
-    const heroSection = document.querySelector("[data-hero-section]");
-    let gradientAngle = 0;
-    const animateGradient = () => {
-      gradientAngle = (gradientAngle + 0.5) % 360;
-      if (heroSection) {
-        heroSection.style.background = `linear-gradient(${gradientAngle}deg, #faf9f7 0%, #f5f0e8 50%, #faf9f7 100%)`;
-      }
-      requestAnimationFrame(animateGradient);
-    };
-    animateGradient();
-
     // Hero section animations with dramatic entrance
     gsap.fromTo(
       heroTitleRef.current,
@@ -211,7 +199,7 @@ export default function Home() {
       {/* Hero Section */}
       <section 
         data-hero-section
-        className="max-w-7xl mx-auto px-4 md:px-8 py-20 md:py-40 relative overflow-hidden">
+        className="max-w-7xl mx-auto px-4 md:px-8 py-20 md:py-40 relative overflow-hidden bg-linear-to-br from-[#faf9f7] via-[#f5f0e8] to-[#faf9f7]">
         {/* Decorative elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-20 left-10 w-72 h-72 bg-[#8b6f47]/5 rounded-full blur-3xl"></div>
@@ -559,7 +547,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-16 md:py-20">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 mb-12 md:mb-16">
             <div className="col-span-2 md:col-span-1">
-              <Link href="/" className="font-bold text-black mb-4 flex items-center gap-2 hover:scale-105 transition-transform inline-flex">
+              <Link href="/" className="font-bold text-black mb-4 inline-flex items-center gap-2 hover:scale-105 transition-transform">
                 <div className="w-6 h-6 bg-linear-to-br from-[#8b6f47] to-[#6b5535] rounded-lg flex items-center justify-center text-white text-xs font-bold shadow-md">
                   A
                 </div>
